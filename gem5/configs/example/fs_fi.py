@@ -146,7 +146,7 @@ def build_test_system(np):
     if options.fi is not None:
         fi_commands = options.fi.split(',')
         if len(fi_commands) != 4:
-            print >> sys.stderr, 
+            print >> sys.stderr, \
                      "Incorrect format. Use -h to find correct format"
         else: # won't catch all errors, but good first start
             inj_tick = Tick(fi_commands[0])

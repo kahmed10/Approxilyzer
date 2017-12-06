@@ -140,7 +140,10 @@ class InstRecord
      */
     bool predicate;
 
+    
+
   public:
+    std::string testTrace;
     InstRecord(Tick _when, ThreadContext *_thread,
                const StaticInstPtr _staticInst,
                TheISA::PCState _pc,

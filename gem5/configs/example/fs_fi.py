@@ -153,18 +153,25 @@ def build_test_system(np):
             inj_reg = fi_commands[1]
             inj_bit = Int(fi_commands[2])
             reg_type = Int(fi_commands[3])
-            test_sys.cpu = [TestCPUClass(clk_domain=test_sys.cpu_clk_domain,
-                             cpu_id=i, 
-                            injector=TestObject(injTick=inj_tick, 
-                            injReg=inj_reg,
-                            injBit=inj_bit, 
-                            regType=reg_type)) for i in xrange(np)]
+            test_sys.cpu = [TestCPUClass(clk_domain= \
+                                test_sys.cpu_clk_domain,
+                                cpu_id=i, 
+                                injector=TestObject(injTick=inj_tick, 
+                                injReg=inj_reg,
+                                injBit=inj_bit, 
+                                regType=reg_type)) for i in xrange(np)]
+            if options.timeout:
+                for i in xrange(np):
+                    test_sys.cpu[i].injector.timeout=options.timeout
+            if options.golden_file:
+                for i in xrange(np):
+                    test_sys.cpu[i].injector.goldenFile=options.golden_file
+                    
     else:
         test_sys.cpu = [TestCPUClass(clk_domain=test_sys.cpu_clk_domain, 
                         cpu_id=i) for i in xrange(np)]    
     
-    #test_sys.cpu.injector = TestObject()
-
+    
     if is_kvm_cpu(TestCPUClass) or is_kvm_cpu(FutureClass):
         test_sys.kvm_vm = KvmVM()
 

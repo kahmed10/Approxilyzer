@@ -1,6 +1,8 @@
 #include "debug/TestObj.hh"
+#include "sim/sim_exit.hh"
 #include "test_obj/test_object.hh"
 
+#include <fstream>
 #include <iostream>
 
 using namespace X86ISA;
@@ -29,8 +31,41 @@ TestObject::TestObject(TestObjectParams *params) :
     injBit(params->injBit),
     injTick(params->injTick),
     injReg(params->injReg),
-    regType(params->regType)
+    regType(params->regType),
+    timeoutVal(params->timeout),
+    goldenFile(params->goldenFile)
 {
+    
+
+    if (goldenFile != "")
+    {
+        
+
+        std::ifstream goldFile(goldenFile);
+        if (goldFile.is_open())
+        {
+            std::string line, strInjTick;
+            bool started = false;
+
+            strInjTick = std::to_string(injTick); // look for first tick before filling vector
+
+            while (std::getline(goldFile, line))
+            {
+                if (!started)
+                {
+                    if (line.find(strInjTick) != std::string::npos)
+                    {
+                        started = true;
+                    }
+                }
+                if (started)
+                    goldenTrace.push_back(line);
+            }
+            goldFile.close();
+        }
+    }
+    
+
     DPRINTF(TestObj, "Testing object!\n");
 }
 
@@ -47,6 +82,14 @@ void TestObject::PerformFI(ThreadContext* _thread, Tick _when,
     {
         FloatRegIndex injR = floatRegConverter[desiredR];
         fi.FlipBit(_injTick, injR, injBit);
+    }
+}
+
+void TestObject::trackState(std::string faultyTrace, std::string goldenTrace)
+{
+    if (goldenTrace != faultyTrace)
+    {
+        exitSimLoop("Diff trace\n");
     }
 }
 

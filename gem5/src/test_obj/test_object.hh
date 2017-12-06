@@ -167,11 +167,15 @@ class TestObject : public SimObject
     Tick injTick;
     std::string injReg;
     int regType;
-    Tick timeoutVal = 10000000000; // test timeout
+    Tick timeoutVal; // = 10000000000; // test timeout
+    std::string goldenFile;
+
+    std::vector<std::string> goldenTrace;
 
     TestObject(TestObjectParams *p);
     void PerformFI(ThreadContext* _thread, Tick _when,
                    Tick _injTick, std::string desiredR, int injBit, int regType);
+    void trackState(std::string faultyTrace, std::string goldenTrace);
 };
 
 }   // end namespace

@@ -559,6 +559,7 @@ BaseSimpleCPU::preExecute()
             injector->PerformFI(thread->getTC(), curTick(), injector->injTick,
                 injector->injReg, injector->injBit, injector->regType);
             didInject = true;
+            idx=0;
         }
         else if (didInject)
         {
@@ -568,8 +569,10 @@ BaseSimpleCPU::preExecute()
             }
         }
 #if TRACING_ON
+        string testTrace;
         traceData = tracer->getInstRecord(curTick(), thread->getTC(),
                 curStaticInst, thread->pcState(), curMacroStaticInst);
+        
         DPRINTF(Decode,"Decode: Decoded %s instruction: %#x\n",
                 curStaticInst->getName(), curStaticInst->machInst);
 #endif // TRACING_ON
@@ -672,6 +675,16 @@ BaseSimpleCPU::postExecute()
 
     if (traceData) {
         traceData->dump();
+        if (didInject && injector->goldenFile != "")  // check divergence point
+        {
+            if (traceData->testTrace != "")
+            {
+                if (traceData->testTrace != injector->goldenTrace[idx])
+                    exitSimLoop("diverged");
+                idx++;
+            }
+                
+        }
         delete traceData;
         traceData = NULL;
     }

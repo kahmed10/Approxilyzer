@@ -34,6 +34,7 @@
 #include "cpu/exetrace.hh"
 
 #include <iomanip>
+#include <sstream>
 
 #include "arch/isa_traits.hh"
 #include "arch/utility.hh"
@@ -60,6 +61,7 @@ void
 Trace::ExeTracerRecord::traceInst(const StaticInstPtr &inst, bool ran)
 {
     ostream &outs = Trace::output();
+    ostringstream testOut;
 
     if (!Debug::ExecUser || !Debug::ExecKernel) {
         bool in_user_mode = TheISA::inUserMode(thread);
@@ -68,9 +70,14 @@ Trace::ExeTracerRecord::traceInst(const StaticInstPtr &inst, bool ran)
     }
 
     if (Debug::ExecTicks)
+    {
         dumpTicks(outs);
+        testOut << when << ": ";
+    }
+        
 
     outs << thread->getCpuPtr()->name() << " ";
+    testOut << thread->getCpuPtr()->name() << " ";
 
     if (Debug::ExecAsid)
         outs << "A" << dec << TheISA::getExecutingAsid(thread) << " ";
@@ -86,18 +93,25 @@ Trace::ExeTracerRecord::traceInst(const StaticInstPtr &inst, bool ran)
             debugSymbolTable->findNearestSymbol(cur_pc, sym_str, sym_addr)) {
         if (cur_pc != sym_addr)
             sym_str += csprintf("+%d",cur_pc - sym_addr);
-        outs << "@" << sym_str;
+        {
+            outs << "@" << sym_str;
+            testOut << "@" << sym_str;
+        }
+        
     } else {
         outs << "0x" << hex << cur_pc;
+        testOut << "0x" << hex << cur_pc;
     }
 
     if (inst->isMicroop()) {
         outs << "." << setw(2) << dec << pc.microPC();
     } else {
         outs << "   ";
+        testOut << "   "; 
     }
 
     outs << " : ";
+    testOut << " : ";
 
     //
     //  Print decoded instruction
@@ -106,42 +120,66 @@ Trace::ExeTracerRecord::traceInst(const StaticInstPtr &inst, bool ran)
     outs << setw(26) << left;
     outs << inst->disassemble(cur_pc, debugSymbolTable);
 
+    testOut << setw(26) << left;
+    testOut << inst->disassemble(cur_pc, debugSymbolTable);
+
     if (ran) {
         outs << " : ";
-
+        testOut << " : ";
         if (Debug::ExecOpClass) {
             outs << Enums::OpClassStrings[inst->opClass()] << " : ";
+            testOut << Enums::OpClassStrings[inst->opClass()] << " : ";
         }
 
         if (Debug::ExecResult && !predicate) {
             outs << "Predicated False";
+            testOut << "Predicated False";
         }
 
         if (Debug::ExecResult && data_status != DataInvalid) {
             ccprintf(outs, " D=%#018x", data.as_int);
+            testOut << "D=" << data.as_int;
         }
 
         if (Debug::ExecEffAddr && getMemValid())
+        {
             outs << " A=0x" << hex << addr;
+            testOut << " A=0x" << hex << addr;
+        }
+            
 
         if (Debug::ExecFetchSeq && fetch_seq_valid)
+        {
             outs << "  FetchSeq=" << dec << fetch_seq;
+            testOut << "  FetchSeq=" << dec << fetch_seq;
+        }
+            
 
         if (Debug::ExecCPSeq && cp_seq_valid)
+        {
             outs << "  CPSeq=" << dec << cp_seq;
+            testOut << "  CPSeq=" << dec << cp_seq;
+        }
+            
 
-        if (Debug::ExecFlags) {
+        if (Debug::ExecFlags) { //TODO testOut
             outs << "  flags=(";
             inst->printFlags(outs, "|");
             outs << ")";
         }
     }
 
+    
     //
     //  End of line...
     //
+    
     outs << endl;
+    testTrace = testOut.str();
+    
+    
 }
+
 
 void
 Trace::ExeTracerRecord::dump()

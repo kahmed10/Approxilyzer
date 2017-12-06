@@ -10,3 +10,5 @@ class TestObject(SimObject):
     injBit = Param.Int(0,"Bit position to flip")
     injTick = Param.Tick(0, "tick to inject fault")
     regType = Param.Int(0, "type of register (0 = int, 1 = float)")
+    timeout = Param.Tick(10000000000, "timeout ticks")
+    goldenFile = Param.String("", "Filename of golden trace")

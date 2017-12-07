@@ -58,7 +58,8 @@ class SysConfig:
             return env.get('LINUX_IMAGE', disk('linux-latest.img'))
         elif buildEnv['TARGET_ISA'] == 'x86':
             #return env.get('LINUX_IMAGE', disk('x86root.img'))
-            return env.get('LINUX_IMAGE', disk('linux-parsec-2-1-m5.img'))
+            #return env.get('LINUX_IMAGE', disk('linux-parsec-2-1-m5.img'))
+            return env.get('LINUX_IMAGE', disk('x86root-parsec.img'))
         elif buildEnv['TARGET_ISA'] == 'arm':
             return env.get('LINUX_IMAGE', disk('linux-aarch32-ael.img'))
         elif buildEnv['TARGET_ISA'] == 'sparc':

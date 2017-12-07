@@ -1,7 +1,7 @@
 #!/bin/bash
 
-if [ $# -ne 6 ]; then
-    echo "Usage: ./run_az.sh [app_name] [inj_file] [ckpt_num] [output_file_check] [job_name] [start_idx]"
+if [ $# -ne 7 ]; then
+    echo "Usage: ./run_az.sh [app_name] [inj_file] [ckpt_num] [output_file_check] [job_name] [start_idx] [pool_name]"
     exit 1
 fi
 
@@ -11,12 +11,13 @@ ckpt_num=$3
 output_file=$4
 job_name=$5
 start_idx=$6
+pool_name=$7
 
 az batch account login -g batchResourceGroup -n kahmed10
 
 #azJobTest="bash -c \"/ext/gem5/scripts/run_injection.sh 237976747471500,rdx,60,0 2 lu_run_min.output\""
 
-az batch job create --id $job_name --pool-id testPool
+az batch job create --id $job_name --pool-id $pool_name
 
 i=$start_idx
 while read line; do

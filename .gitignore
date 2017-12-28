@@ -24,5 +24,9 @@ gem5//system/arm/simple_bootloader/*.o
 gem5//system/arm/simple_bootloader/boot.arm
 gem5//system/arm/simple_bootloader/boot_emm.arm
 gem5//system/arm/aarch64_bootloader/boot_emm.arm64
+<<<<<<< HEAD
 dist/*
 dist.tar.gz
+=======
+gem5/scripts/*.txt
+>>>>>>> cf0f5a9b94c87054decbd6f1c2f7b70fd3e8e6e7

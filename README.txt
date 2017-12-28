@@ -21,7 +21,7 @@ APPROXILYZER REQUIREMENTS
 SETTING UP ENVIRONMENT
 ==========================================================
 1) TEMPORARY: Download gem5 disk images here:
-https://batchstoragekahmed10.blob.core.windows.net/gem5images/dist.tar.gz
+https://uofi.box.com/s/6h0ep96pbi5sexygmyobt778wyqfl3r6
 create the following directory structure, or modify the paths in
 configs/common/SysPaths.py: /dist/m5/system/disks
                             /dist/m5/system/binaries

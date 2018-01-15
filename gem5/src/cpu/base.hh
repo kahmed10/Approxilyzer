@@ -64,7 +64,7 @@
 #include "sim/insttracer.hh"
 #include "sim/probe/pmu.hh"
 #include "sim/system.hh"
-#include "test_obj/test_object.hh"
+#include "injector/injector.hh"
 #include "debug/Mwait.hh"
 
 class BaseCPU;
@@ -256,7 +256,7 @@ class BaseCPU : public MemObject
     std::vector<ThreadContext *> threadContexts;
 
     Trace::InstTracer* tracer;
-    FaultInjector::TestObject* injector;
+    FaultInjector::Injector* injector;
     bool didInject;
     int idx;
 

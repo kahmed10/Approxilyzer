@@ -156,7 +156,7 @@ def build_test_system(np):
             test_sys.cpu = [TestCPUClass(clk_domain= \
                                 test_sys.cpu_clk_domain,
                                 cpu_id=i, 
-                                injector=TestObject(injTick=inj_tick, 
+                                injector=Injector(injTick=inj_tick, 
                                 injReg=inj_reg,
                                 injBit=inj_bit, 
                                 regType=reg_type)) for i in xrange(np)]

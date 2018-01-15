@@ -53,7 +53,7 @@ from InstTracer import InstTracer
 from CPUTracers import ExeTracer
 from MemObject import MemObject
 from ClockDomain import *
-from TestObject import TestObject
+from Injector import Injector
 
 default_tracer = ExeTracer()
 
@@ -224,7 +224,7 @@ class BaseCPU(MemObject):
         "between CPU models)")
 
     tracer = Param.InstTracer(default_tracer, "Instruction tracer")
-    injector = Param.TestObject(TestObject(), "test injector")
+    injector = Param.Injector(Injector(), "fault injector")
 
     icache_port = MasterPort("Instruction Port")
     dcache_port = MasterPort("Data Port")

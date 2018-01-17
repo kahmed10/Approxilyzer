@@ -1,4 +1,4 @@
-## APPROXILYZER
+# Approxilyzer
 
 Approxilyzer is an open-source framework for instruction level approximation 
 and resiliency software. Approxilyzer provides a systematic way to identify 
@@ -21,7 +21,9 @@ Project overview can be viewed at: https://cs.illinois.edu/approxilyzer
   * SWIG 2.0.4 or greater
   * protobuf 2.1 or greater
   * M4
-...On Ubuntu, the following commands should cover all of the requirements:
+
+   On Ubuntu, the following commands should cover all of the requirements:
+   
 ```
 sudo apt-get update
 sudo apt-get install build-essential
@@ -37,7 +39,8 @@ cd gem5
 scons build/X86/gem5.fast -jX
 scons build/X86/gem5.opt -jX
 ```
- Where **X** is the number of available CPU cores plus 1.
+
+   Where **X** is the number of available CPU cores plus 1.  
 
 ## Downloading Disk Images
 1. Download sample gem5 disk images [here](https://uofi.box.com/s/6h0ep96pbi5sexygmyobt778wyqfl3r6)

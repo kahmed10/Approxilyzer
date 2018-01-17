@@ -11,4 +11,4 @@ before_install:
   - sudo apt-get install -qq libprotobuf-dev python-protobuf protobuf-compiler libgoogle-perftools-dev
   - sudo apt-get install -qq m4
 install: true
-script: echo | scons build/X86/gem5.fast -j3
+script: cd gem5; echo | scons build/X86/gem5.fast -j3

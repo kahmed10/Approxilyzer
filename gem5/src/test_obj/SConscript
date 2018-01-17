@@ -1,6 +1,0 @@
-Import('*')
-
-SimObject('TestObject.py')
-Source('test_object.cc')
-
-DebugFlag('TestObj')

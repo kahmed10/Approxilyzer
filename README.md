@@ -37,7 +37,7 @@ cd gem5
 scons build/X86/gem5.fast -jX
 scons build/X86/gem5.opt -jX
 ```
-Where **X** is the number of available CPU cores plus 1.
+ Where **X** is the number of available CPU cores plus 1.
 
 ## Downloading Disk Images
 1. Download sample gem5 disk images [here](https://uofi.box.com/s/6h0ep96pbi5sexygmyobt778wyqfl3r6)

@@ -13,9 +13,7 @@ Project overview can be viewed at: https://cs.illinois.edu/approxilyzer
 
 
 ## Approxilyzer Setup Instructions
-1. all dependencies for gem5 are required (see gem5 documentation)
-
-...This includes the following:
+1. all dependencies for gem5 are required (see gem5 documentation) This includes the following:
 
   * gcc 4.8 or greater
   * python 2.7 or greater
@@ -39,8 +37,7 @@ cd gem5
 scons build/X86/gem5.fast -jX
 scons build/X86/gem5.opt -jX
 ```
-
-...Where **X** is the number of available CPU cores plus 1.
+Where **X** is the number of available CPU cores plus 1.
 
 ## Downloading Disk Images
 1. Download sample gem5 disk images [here](https://uofi.box.com/s/6h0ep96pbi5sexygmyobt778wyqfl3r6)

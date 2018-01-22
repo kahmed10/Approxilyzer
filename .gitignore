@@ -29,4 +29,5 @@ dist/*
 dist.tar.gz
 =======
 gem5/scripts/*.txt
+workloads
 >>>>>>> cf0f5a9b94c87054decbd6f1c2f7b70fd3e8e6e7

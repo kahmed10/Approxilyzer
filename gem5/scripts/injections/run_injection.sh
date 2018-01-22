@@ -1,7 +1,7 @@
 #/!bin/bash
 
-if [ $# -ne 3 ]; then
-    echo "Usage: ./run_injection.sh [fi_args] [app_ckpt_num] [app_output (in m5out)]"
+if [ $# -ne 4 ]; then
+    echo "Usage: ./run_injection.sh [fi_args] [app_ckpt_num] [app_output (in m5out)] [disk_image]"
     exit 1
 fi
 
@@ -9,7 +9,7 @@ fi_args=$1
 ckpt=$2
 app_output=$3
 
-GEM5_DIR="/home/khalique/gem5"
+GEM5_DIR="/shared/workspace/kahmed10/Approxilyzer/gem5"
 
 
 mkdir -p m5out

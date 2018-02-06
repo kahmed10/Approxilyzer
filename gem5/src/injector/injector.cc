@@ -66,7 +66,7 @@ Injector::Injector(InjectorParams *params) :
     }
     
 
-    DPRINTF(TestObj, "Testing object!\n");
+    //DPRINTF("Testing object!\n");
 }
 
 void Injector::PerformFI(ThreadContext* _thread, Tick _when, 

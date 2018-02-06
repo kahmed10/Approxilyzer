@@ -14,4 +14,4 @@ else
 fi
 
 mkdir -p workloads/apps
-
+mkdir -p workloads/checkpoint

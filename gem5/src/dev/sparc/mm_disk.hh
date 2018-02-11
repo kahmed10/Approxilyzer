@@ -62,6 +62,7 @@ class MmDisk : public BasicPioDevice
     Tick write(PacketPtr pkt) override;
 
     void serialize(CheckpointOut &cp) const override;
+    void unserialize(CheckpointIn &cp) override;
 };
 
 #endif //__DEV_SPARC_MM_DISK_HH__

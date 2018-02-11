@@ -184,6 +184,13 @@ MmDisk::serialize(CheckpointOut &cp) const
     }
 }
 
+void
+MmDisk::unserialize(CheckpointIn &cp)
+{
+
+}
+
+
 MmDisk *
 MmDiskParams::create()
 {

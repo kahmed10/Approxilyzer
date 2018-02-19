@@ -557,7 +557,7 @@ BaseSimpleCPU::preExecute()
         if (!didInject && curTick() == injector->injTick && curTick() != 0)
         {
             injector->PerformFI(thread->getTC(), curTick(), injector->injTick,
-                injector->injReg, injector->injBit, injector->regType);
+                "x86", injector->injReg, injector->injBit, injector->regType);
             didInject = true;
             idx=0;
         }

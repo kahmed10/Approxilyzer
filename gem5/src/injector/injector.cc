@@ -10,20 +10,20 @@ using namespace X86ISA;
 namespace FaultInjector
 {
 
-void FI::FlipBit(Tick _injTick, IntRegIndex injR, int injBit) // add bit position as parameter
+void FI::FlipBit(Tick _injTick, int injR, int injBit, int regType) // add bit position as parameter
 {
-    uint64_t currVal = thread->readIntReg(injR);
-    uint64_t bitMask = 1 << injBit;
-    
-    thread->setIntReg(injR, currVal ^ bitMask); // flip bit using mask
-}
-
-void FI::FlipBit(Tick _injTick, FloatRegIndex injR, int injBit) // add bit position as parameter
-{
-    uint64_t currVal = thread->readFloatReg(injR);
-    uint64_t bitMask = 1 << injBit;
-    
-    thread->setIntReg(injR, currVal ^ bitMask); // flip bit using mask
+    uint64_t currVal; // = thread->readIntReg(injR);
+    uint64_t bitMask= 1 << injBit;
+    if (regType == 0)
+    {
+        currVal = thread->readIntReg(injR); 
+        thread->setIntReg(injR, currVal ^ bitMask); // flip bit using mask
+    }
+    else
+    {
+        currVal = thread->readFloatReg(injR);
+        thread->setFloatReg(injR, currVal ^ bitMask);
+    }
 }
 
 Injector::Injector(InjectorParams *params) : 
@@ -70,19 +70,11 @@ Injector::Injector(InjectorParams *params) :
 }
 
 void Injector::PerformFI(ThreadContext* _thread, Tick _when, 
-                      Tick _injTick, std::string desiredR, int injBit, int regType)
+                      Tick _injTick, std::string ISA, std::string desiredR, int injBit, int regType)
 {
     FI fi(_thread, _when);
-    if (regType == 0)   // int register
-    {   
-        IntRegIndex injR = intRegConverter[desiredR];
-        fi.FlipBit(_injTick, injR, injBit);
-    }
-    else if (regType == 1) // float register
-    {
-        FloatRegIndex injR = floatRegConverter[desiredR];
-        fi.FlipBit(_injTick, injR, injBit);
-    }
+    int injR = archMap[ISA][regType][desiredR];
+    fi.FlipBit(_injTick, injR, injBit, regType);
 }
 
 void Injector::trackState(std::string faultyTrace, std::string goldenTrace)

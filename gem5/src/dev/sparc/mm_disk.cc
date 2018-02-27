@@ -182,14 +182,8 @@ MmDisk::serialize(CheckpointOut &cp) const
             image->write(diskData, curSector);
         assert(bytes_read == SectorSize);
     }
+    ClockedObject::serialize(cp);
 }
-
-void
-MmDisk::unserialize(CheckpointIn &cp)
-{
-
-}
-
 
 MmDisk *
 MmDiskParams::create()

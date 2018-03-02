@@ -374,7 +374,7 @@ def addFSOptions(parser):
 def addFIOptions(parser):
     # Fault Injector Options
     parser.add_option("--fi", action="store", type="string", default=None,
-                      help="Fault Injection Format: [tick],[isa],[reg],[bit_position],[reg_type]")
+                      help="Fault Injection Format: [isa],[tick],[reg],[bit_position],[reg_type],[src_or_dest]")
     parser.add_option("--timeout", action="store", type="string", default=None,
                       help="add timeout value to fault injector")
     parser.add_option("--golden-file", action="store", type="string", default=None,

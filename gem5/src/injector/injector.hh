@@ -55,7 +55,45 @@ static std::map<std::string, int> SPARCIntRegConverter =
     {"i4", SparcISA::IntRegIndex::I4},
     {"i5", SparcISA::IntRegIndex::I5},
     {"i6", SparcISA::IntRegIndex::I6},
-    {"i7", SparcISA::IntRegIndex::I7}
+    {"i7", SparcISA::IntRegIndex::I7},
+
+// an alternative to using exact index instead
+
+    {"0", SparcISA::IntRegIndex::G0},
+    {"1", SparcISA::IntRegIndex::G1},
+    {"2", SparcISA::IntRegIndex::G2},
+    {"3", SparcISA::IntRegIndex::G3},
+    {"4", SparcISA::IntRegIndex::G4},
+    {"5", SparcISA::IntRegIndex::G5},
+    {"6", SparcISA::IntRegIndex::G6},
+    {"7", SparcISA::IntRegIndex::G7},
+
+    {"8", SparcISA::IntRegIndex::O0},
+    {"9", SparcISA::IntRegIndex::O1},
+    {"10", SparcISA::IntRegIndex::O2},
+    {"11", SparcISA::IntRegIndex::O3},
+    {"12", SparcISA::IntRegIndex::O4},
+    {"13", SparcISA::IntRegIndex::O5},
+    {"14", SparcISA::IntRegIndex::O6},
+    {"15", SparcISA::IntRegIndex::O7},
+
+    {"16", SparcISA::IntRegIndex::L0},
+    {"17", SparcISA::IntRegIndex::L1},
+    {"18", SparcISA::IntRegIndex::L2},
+    {"19", SparcISA::IntRegIndex::L3},
+    {"20", SparcISA::IntRegIndex::L4},
+    {"21", SparcISA::IntRegIndex::L5},
+    {"22", SparcISA::IntRegIndex::L6},
+    {"23", SparcISA::IntRegIndex::L7},
+
+    {"24", SparcISA::IntRegIndex::I0},
+    {"25", SparcISA::IntRegIndex::I1},
+    {"26", SparcISA::IntRegIndex::I2},
+    {"27", SparcISA::IntRegIndex::I3},
+    {"28", SparcISA::IntRegIndex::I4},
+    {"29", SparcISA::IntRegIndex::I5},
+    {"30", SparcISA::IntRegIndex::I6},
+    {"31", SparcISA::IntRegIndex::I7}
 };
 
 static std::map<std::string, int> SPARCFloatRegConverter = 
@@ -129,7 +167,80 @@ static std::map<std::string, int> SPARCFloatRegConverter =
     {"f60", SparcISA::FloatRegIndex::F60},
     {"f61", SparcISA::FloatRegIndex::F61},
     {"f62", SparcISA::FloatRegIndex::F62},
-    {"f63", SparcISA::FloatRegIndex::F63}
+    {"f63", SparcISA::FloatRegIndex::F63},
+
+// an alternative to using exact index instead
+
+    {"0", SparcISA::FloatRegIndex::F0},
+    {"1", SparcISA::FloatRegIndex::F1},
+    {"2", SparcISA::FloatRegIndex::F2},
+    {"3", SparcISA::FloatRegIndex::F3},
+    {"4", SparcISA::FloatRegIndex::F4},
+    {"5", SparcISA::FloatRegIndex::F5},
+    {"6", SparcISA::FloatRegIndex::F6},
+    {"7", SparcISA::FloatRegIndex::F7},
+    {"8", SparcISA::FloatRegIndex::F8},
+    {"9", SparcISA::FloatRegIndex::F9},
+
+    {"10", SparcISA::FloatRegIndex::F10},
+    {"11", SparcISA::FloatRegIndex::F11},
+    {"12", SparcISA::FloatRegIndex::F12},
+    {"13", SparcISA::FloatRegIndex::F13},
+    {"14", SparcISA::FloatRegIndex::F14},
+    {"15", SparcISA::FloatRegIndex::F15},
+    {"16", SparcISA::FloatRegIndex::F16},
+    {"17", SparcISA::FloatRegIndex::F17},
+    {"18", SparcISA::FloatRegIndex::F18},
+    {"19", SparcISA::FloatRegIndex::F19},
+
+    {"20", SparcISA::FloatRegIndex::F20},
+    {"21", SparcISA::FloatRegIndex::F21},
+    {"22", SparcISA::FloatRegIndex::F22},
+    {"23", SparcISA::FloatRegIndex::F23},
+    {"24", SparcISA::FloatRegIndex::F24},
+    {"25", SparcISA::FloatRegIndex::F25},
+    {"26", SparcISA::FloatRegIndex::F26},
+    {"27", SparcISA::FloatRegIndex::F27},
+    {"28", SparcISA::FloatRegIndex::F28},
+    {"29", SparcISA::FloatRegIndex::F29},
+
+    {"30", SparcISA::FloatRegIndex::F30},
+    {"31", SparcISA::FloatRegIndex::F31},
+    {"32", SparcISA::FloatRegIndex::F32},
+    {"33", SparcISA::FloatRegIndex::F33},
+    {"34", SparcISA::FloatRegIndex::F34},
+    {"35", SparcISA::FloatRegIndex::F35},
+    {"36", SparcISA::FloatRegIndex::F36},
+    {"37", SparcISA::FloatRegIndex::F37},
+    {"38", SparcISA::FloatRegIndex::F38},
+    {"39", SparcISA::FloatRegIndex::F39},
+
+    {"40", SparcISA::FloatRegIndex::F40},
+    {"41", SparcISA::FloatRegIndex::F41},
+    {"42", SparcISA::FloatRegIndex::F42},
+    {"43", SparcISA::FloatRegIndex::F43},
+    {"44", SparcISA::FloatRegIndex::F44},
+    {"45", SparcISA::FloatRegIndex::F45},
+    {"46", SparcISA::FloatRegIndex::F46},
+    {"47", SparcISA::FloatRegIndex::F47},
+    {"48", SparcISA::FloatRegIndex::F48},
+    {"49", SparcISA::FloatRegIndex::F49},
+
+    {"50", SparcISA::FloatRegIndex::F50},
+    {"51", SparcISA::FloatRegIndex::F51},
+    {"52", SparcISA::FloatRegIndex::F52},
+    {"53", SparcISA::FloatRegIndex::F53},
+    {"54", SparcISA::FloatRegIndex::F54},
+    {"55", SparcISA::FloatRegIndex::F55},
+    {"56", SparcISA::FloatRegIndex::F56},
+    {"57", SparcISA::FloatRegIndex::F57},
+    {"58", SparcISA::FloatRegIndex::F58},
+    {"59", SparcISA::FloatRegIndex::F59},
+
+    {"60", SparcISA::FloatRegIndex::F60},
+    {"61", SparcISA::FloatRegIndex::F61},
+    {"62", SparcISA::FloatRegIndex::F62},
+    {"63", SparcISA::FloatRegIndex::F63}
 };
 static std::map<std::string, int> SPARCDoubleRegConverter = 
 {
@@ -164,7 +275,42 @@ static std::map<std::string, int> SPARCDoubleRegConverter =
     {"d58", SparcISA::FloatRegIndex::F58},
 
     {"d60", SparcISA::FloatRegIndex::F60},
-    {"d62", SparcISA::FloatRegIndex::F62}
+    {"d62", SparcISA::FloatRegIndex::F62},
+
+// an alternative to using exact index instead
+
+    {"0", SparcISA::FloatRegIndex::F0},
+    {"2", SparcISA::FloatRegIndex::F2},
+    {"4", SparcISA::FloatRegIndex::F4},
+    {"6", SparcISA::FloatRegIndex::F6},
+    {"8", SparcISA::FloatRegIndex::F8},
+
+    {"20", SparcISA::FloatRegIndex::F20},
+    {"22", SparcISA::FloatRegIndex::F22},
+    {"24", SparcISA::FloatRegIndex::F24},
+    {"26", SparcISA::FloatRegIndex::F26},
+    {"28", SparcISA::FloatRegIndex::F28},
+
+    {"30", SparcISA::FloatRegIndex::F30},
+    {"32", SparcISA::FloatRegIndex::F32},
+    {"34", SparcISA::FloatRegIndex::F34},
+    {"36", SparcISA::FloatRegIndex::F36},
+    {"38", SparcISA::FloatRegIndex::F38},
+
+    {"40", SparcISA::FloatRegIndex::F40},
+    {"42", SparcISA::FloatRegIndex::F42},
+    {"44", SparcISA::FloatRegIndex::F44},
+    {"46", SparcISA::FloatRegIndex::F46},
+    {"48", SparcISA::FloatRegIndex::F48},
+
+    {"50", SparcISA::FloatRegIndex::F50},
+    {"52", SparcISA::FloatRegIndex::F52},
+    {"54", SparcISA::FloatRegIndex::F54},
+    {"56", SparcISA::FloatRegIndex::F56},
+    {"58", SparcISA::FloatRegIndex::F58},
+
+    {"60", SparcISA::FloatRegIndex::F60},
+    {"62", SparcISA::FloatRegIndex::F62},
 };
 
 // convert string to correct register index

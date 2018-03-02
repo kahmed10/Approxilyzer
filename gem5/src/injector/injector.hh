@@ -5,6 +5,7 @@
 #include "sim/sim_object.hh"
 
 #include "arch/sparc/regs/int.hh"
+#include "arch/sparc/regs/float.hh"
 #include "arch/x86/regs/int.hh"
 #include "arch/x86/regs/float.hh"
 #include "base/bigint.hh"
@@ -57,7 +58,114 @@ static std::map<std::string, int> SPARCIntRegConverter =
     {"i7", SparcISA::IntRegIndex::I7}
 };
 
-static std::map<std::string, int> SPARCFloatRegConverter;
+static std::map<std::string, int> SPARCFloatRegConverter = 
+{
+    {"f0", SparcISA::FloatRegIndex::F0},
+    {"f1", SparcISA::FloatRegIndex::F1},
+    {"f2", SparcISA::FloatRegIndex::F2},
+    {"f3", SparcISA::FloatRegIndex::F3},
+    {"f4", SparcISA::FloatRegIndex::F4},
+    {"f5", SparcISA::FloatRegIndex::F5},
+    {"f6", SparcISA::FloatRegIndex::F6},
+    {"f7", SparcISA::FloatRegIndex::F7},
+    {"f8", SparcISA::FloatRegIndex::F8},
+    {"f9", SparcISA::FloatRegIndex::F9},
+
+    {"f10", SparcISA::FloatRegIndex::F10},
+    {"f11", SparcISA::FloatRegIndex::F11},
+    {"f12", SparcISA::FloatRegIndex::F12},
+    {"f13", SparcISA::FloatRegIndex::F13},
+    {"f14", SparcISA::FloatRegIndex::F14},
+    {"f15", SparcISA::FloatRegIndex::F15},
+    {"f16", SparcISA::FloatRegIndex::F16},
+    {"f17", SparcISA::FloatRegIndex::F17},
+    {"f18", SparcISA::FloatRegIndex::F18},
+    {"f19", SparcISA::FloatRegIndex::F19},
+
+    {"f20", SparcISA::FloatRegIndex::F20},
+    {"f21", SparcISA::FloatRegIndex::F21},
+    {"f22", SparcISA::FloatRegIndex::F22},
+    {"f23", SparcISA::FloatRegIndex::F23},
+    {"f24", SparcISA::FloatRegIndex::F24},
+    {"f25", SparcISA::FloatRegIndex::F25},
+    {"f26", SparcISA::FloatRegIndex::F26},
+    {"f27", SparcISA::FloatRegIndex::F27},
+    {"f28", SparcISA::FloatRegIndex::F28},
+    {"f29", SparcISA::FloatRegIndex::F29},
+
+    {"f30", SparcISA::FloatRegIndex::F30},
+    {"f31", SparcISA::FloatRegIndex::F31},
+    {"f32", SparcISA::FloatRegIndex::F32},
+    {"f33", SparcISA::FloatRegIndex::F33},
+    {"f34", SparcISA::FloatRegIndex::F34},
+    {"f35", SparcISA::FloatRegIndex::F35},
+    {"f36", SparcISA::FloatRegIndex::F36},
+    {"f37", SparcISA::FloatRegIndex::F37},
+    {"f38", SparcISA::FloatRegIndex::F38},
+    {"f39", SparcISA::FloatRegIndex::F39},
+
+    {"f40", SparcISA::FloatRegIndex::F40},
+    {"f41", SparcISA::FloatRegIndex::F41},
+    {"f42", SparcISA::FloatRegIndex::F42},
+    {"f43", SparcISA::FloatRegIndex::F43},
+    {"f44", SparcISA::FloatRegIndex::F44},
+    {"f45", SparcISA::FloatRegIndex::F45},
+    {"f46", SparcISA::FloatRegIndex::F46},
+    {"f47", SparcISA::FloatRegIndex::F47},
+    {"f48", SparcISA::FloatRegIndex::F48},
+    {"f49", SparcISA::FloatRegIndex::F49},
+
+    {"f50", SparcISA::FloatRegIndex::F50},
+    {"f51", SparcISA::FloatRegIndex::F51},
+    {"f52", SparcISA::FloatRegIndex::F52},
+    {"f53", SparcISA::FloatRegIndex::F53},
+    {"f54", SparcISA::FloatRegIndex::F54},
+    {"f55", SparcISA::FloatRegIndex::F55},
+    {"f56", SparcISA::FloatRegIndex::F56},
+    {"f57", SparcISA::FloatRegIndex::F57},
+    {"f58", SparcISA::FloatRegIndex::F58},
+    {"f59", SparcISA::FloatRegIndex::F59},
+
+    {"f60", SparcISA::FloatRegIndex::F60},
+    {"f61", SparcISA::FloatRegIndex::F61},
+    {"f62", SparcISA::FloatRegIndex::F62},
+    {"f63", SparcISA::FloatRegIndex::F63}
+};
+static std::map<std::string, int> SPARCDoubleRegConverter = 
+{
+    {"d0", SparcISA::FloatRegIndex::F0},
+    {"d2", SparcISA::FloatRegIndex::F2},
+    {"d4", SparcISA::FloatRegIndex::F4},
+    {"d6", SparcISA::FloatRegIndex::F6},
+    {"d8", SparcISA::FloatRegIndex::F8},
+
+    {"d20", SparcISA::FloatRegIndex::F20},
+    {"d22", SparcISA::FloatRegIndex::F22},
+    {"d24", SparcISA::FloatRegIndex::F24},
+    {"d26", SparcISA::FloatRegIndex::F26},
+    {"d28", SparcISA::FloatRegIndex::F28},
+
+    {"d30", SparcISA::FloatRegIndex::F30},
+    {"d32", SparcISA::FloatRegIndex::F32},
+    {"d34", SparcISA::FloatRegIndex::F34},
+    {"d36", SparcISA::FloatRegIndex::F36},
+    {"d38", SparcISA::FloatRegIndex::F38},
+
+    {"d40", SparcISA::FloatRegIndex::F40},
+    {"d42", SparcISA::FloatRegIndex::F42},
+    {"d44", SparcISA::FloatRegIndex::F44},
+    {"d46", SparcISA::FloatRegIndex::F46},
+    {"d48", SparcISA::FloatRegIndex::F48},
+
+    {"d50", SparcISA::FloatRegIndex::F50},
+    {"d52", SparcISA::FloatRegIndex::F52},
+    {"d54", SparcISA::FloatRegIndex::F54},
+    {"d56", SparcISA::FloatRegIndex::F56},
+    {"d58", SparcISA::FloatRegIndex::F58},
+
+    {"d60", SparcISA::FloatRegIndex::F60},
+    {"d62", SparcISA::FloatRegIndex::F62}
+};
 
 // convert string to correct register index
 static std::map<std::string, int> x86IntRegConverter =
@@ -195,7 +303,8 @@ static std::vector<std::map<std::string, int>> x86Table =
 static std::vector<std::map<std::string, int>> SPARCTable = 
 {
     SPARCIntRegConverter,
-    SPARCFloatRegConverter
+    SPARCFloatRegConverter,
+    SPARCDoubleRegConverter
 };
 
 static std::map<std::string, std::vector<std::map<std::string, int>>> archMap = 
@@ -208,11 +317,12 @@ static std::map<std::string, std::vector<std::map<std::string, int>>> archMap =
 class FI
 {
   protected:
+    std::string ISA;
     Tick when;
     ThreadContext* thread;
   public:
-    FI(ThreadContext* _thread, Tick _when)
-        : when(_when), thread(_thread)
+    FI(ThreadContext* _thread, Tick _when, std::string _ISA)
+        : ISA(_ISA), when(_when), thread(_thread)
     { }
     void FlipBit(Tick _injTick, int injR, int injBit, int regType);
 
@@ -221,10 +331,12 @@ class FI
 class Injector : public SimObject
 {    
   public:
+    std::string ISA;
     int injBit;
     Tick injTick;
     std::string injReg;
     int regType;
+    int srcDest;
     Tick timeoutVal; // = 10000000000; // test timeout
     std::string goldenFile;
 

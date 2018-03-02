@@ -6,9 +6,11 @@ class Injector(SimObject):
     cxx_class = 'FaultInjector::Injector'
     cxx_header = 'injector/injector.hh'
 
+    ISA = Param.String("", "target ISA to perform injection")
     injReg = Param.String("", "Register to inject into")
     injBit = Param.Int(0,"Bit position to flip")
     injTick = Param.Tick(0, "tick to inject fault")
-    regType = Param.Int(0, "type of register (0 = int, 1 = float)")
+    regType = Param.Int(0, "type of register (0 = int, 1 = float, 2 = double)")
+    srcDest = Param.Int(0, "source or destinate register (0 = src, 1 = dest")
     timeout = Param.Tick(10000000000, "timeout ticks")
     goldenFile = Param.String("", "Filename of golden trace")

@@ -258,6 +258,7 @@ class BaseCPU : public MemObject
     Trace::InstTracer* tracer;
     FaultInjector::Injector* injector;
     bool didInject;
+    bool nextTick;
     int idx;
 
   public:

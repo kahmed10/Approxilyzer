@@ -145,21 +145,25 @@ def build_test_system(np):
 
     if options.fi is not None:
         fi_commands = options.fi.split(',')
-        if len(fi_commands) != 4:
+        if len(fi_commands) != 6:
             print >> sys.stderr, \
                      "Incorrect format. Use -h to find correct format"
         else: # won't catch all errors, but good first start
-            inj_tick = Tick(fi_commands[0])
-            inj_reg = fi_commands[1]
-            inj_bit = Int(fi_commands[2])
-            reg_type = Int(fi_commands[3])
+            isa = String(fi_commands[0])
+            inj_tick = Tick(fi_commands[1])
+            inj_reg = fi_commands[2]
+            inj_bit = Int(fi_commands[3])
+            reg_type = Int(fi_commands[4])
+            src_dest = Int(fi_commands[5])
             test_sys.cpu = [TestCPUClass(clk_domain= \
                                 test_sys.cpu_clk_domain,
                                 cpu_id=i, 
-                                injector=Injector(injTick=inj_tick, 
+                                injector=Injector(ISA=isa,
+                                injTick=inj_tick, 
                                 injReg=inj_reg,
                                 injBit=inj_bit, 
-                                regType=reg_type)) for i in xrange(np)]
+                                regType=reg_type,
+                                srcDest=src_dest)) for i in xrange(np)]
             if options.timeout:
                 for i in xrange(np):
                     test_sys.cpu[i].injector.timeout=options.timeout

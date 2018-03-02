@@ -14,24 +14,46 @@ void FI::FlipBit(Tick _injTick, int injR, int injBit, int regType) // add bit po
 {
     uint64_t currVal; // = thread->readIntReg(injR);
     uint64_t bitMask= 1 << injBit;
+
     if (regType == 0)
     {
         currVal = thread->readIntReg(injR); 
         thread->setIntReg(injR, currVal ^ bitMask); // flip bit using mask
     }
-    else
+    else if (regType == 1)
     {
-        currVal = thread->readFloatReg(injR);
-        thread->setFloatReg(injR, currVal ^ bitMask);
+        currVal = thread->readFloatRegBits(injR);
+        thread->setFloatRegBits(injR, currVal ^ bitMask);
+    }
+    else if (regType == 2)
+    {
+        bool upper = false;
+        if (injBit >= 32) // flipping higher order bits
+        {
+            upper = true;
+            bitMask = 1 << (injBit - 32);
+        }
+        if (upper)
+        {
+            currVal = thread->readFloatRegBits(injR);
+            thread->setFloatRegBits(injR, currVal ^ bitMask);
+        }
+        else
+        {
+            currVal = thread->readFloatRegBits(injR+1);
+            thread->setFloatRegBits(injR+1, currVal ^ bitMask);
+        }
     }
 }
 
 Injector::Injector(InjectorParams *params) : 
     SimObject(params),
+    ISA(params->ISA),
     injBit(params->injBit),
     injTick(params->injTick),
     injReg(params->injReg),
     regType(params->regType),
+    srcDest(params->srcDest),
     timeoutVal(params->timeout),
     goldenFile(params->goldenFile)
 {
@@ -72,9 +94,9 @@ Injector::Injector(InjectorParams *params) :
 void Injector::PerformFI(ThreadContext* _thread, Tick _when, 
                       Tick _injTick, std::string ISA, std::string desiredR, int injBit, int regType)
 {
-    FI fi(_thread, _when);
+    FI fi(_thread, _when, ISA);
     int injR = archMap[ISA][regType][desiredR];
-    fi.FlipBit(_injTick, injR, injBit, regType);
+    fi.FlipBit(_when, injR, injBit, regType);
 }
 
 void Injector::trackState(std::string faultyTrace, std::string goldenTrace)

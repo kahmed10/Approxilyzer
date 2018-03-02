@@ -556,10 +556,22 @@ BaseSimpleCPU::preExecute()
     if (curStaticInst) {
         if (!didInject && curTick() == injector->injTick && curTick() != 0)
         {
+            if (injector->srcDest == 0)
+            {
             injector->PerformFI(thread->getTC(), curTick(), injector->injTick,
-                "x86", injector->injReg, injector->injBit, injector->regType);
+                injector->ISA, injector->injReg, injector->injBit, injector->regType);
             didInject = true;
             idx=0;
+            }
+            else
+                nextTick = true;
+        }
+        else if (!didInject && nextTick)
+        {
+        injector->PerformFI(thread->getTC(), curTick(), injector->injTick,
+            injector->ISA, injector->injReg, injector->injBit, injector->regType);
+        didInject = true;
+        
         }
         else if (didInject)
         {

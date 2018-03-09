@@ -10,7 +10,8 @@ class basic_block:
         self.has_stores = False
 
 class st_inst:
-    def __init__(self,addr,tick):
+    def __init__(self,pc,addr,tick):
+        self.pc = pc
         self.addr = addr
         self.tick = tick
         self.loads = []
@@ -48,21 +49,15 @@ del pc_fname_list
 # get information about the time clocks
 ins_file_list = open(mem_fname).read().splitlines()
 
-ins_content = [x.strip().split() for x in ins_file_list] 
+trace_list = [x.strip().split() for x in ins_file_list] 
 
 del ins_file_list
 
-print('Number of ticks', len(ins_content))
+print('Number of ticks', len(trace_list))
 print('Number of PCs', len(pc_control_map))
 
 
 
-
-
-# TODO: legacy implementation, enforce clean version automatically
-# remove the ticks not present in PC Key (library access etc)
-#trace_list = [item for item in ins_content if item[1][2:] in pc_key] # 2: here gets rid of 0x
-trace_list = ins_content
 
 # find basic blocks
 ctrl_inst_index = [i for i in range(len(trace_list)) if pc_control_map[trace_list[i][1][2:]]] # index for control instructions
@@ -117,32 +112,28 @@ for item in trace_list:
             bb_index += 1
         if len(item) == 4:  # ld/st instruction
             if item[-2] == "Write":
-                try:  # debugging
-                    if addr not in program_bb[bb_index].store_addr_map:
-                        program_bb[bb_index].store_addr_map[addr] = []
-                    program_bb[bb_index].store_addr_map[addr].append(
-                            st_inst(addr,tick))
-                except:
-                    print("bb_index: %d" % bb_index)
+                if addr not in program_bb[bb_index].store_addr_map:
+                    program_bb[bb_index].store_addr_map[addr] = []
+                program_bb[bb_index].store_addr_map[addr].append(
+                        st_inst(pc,addr,tick))
             elif item[-2] == "Read":
-                try:
-                    if addr in program_bb[bb_index].store_addr_map:
-                        num_stores = len(program_bb[bb_index].store_addr_map[
-                                addr])
-                        for i in range(num_stores,0,-1):
-                            curr_st_inst = program_bb[bb_index].store_addr_map[
-                                addr][i-1]
-                            # get most recent store
-                            if tick > curr_st_inst.tick:
-                                curr_st_inst.add_load(pc)
-                                break
-                except:
-                    print("bb_index: %d" % bb_index)
+                if addr in program_bb[bb_index].store_addr_map:
+                    num_stores = len(program_bb[bb_index].store_addr_map[
+                            addr])
+                    for i in range(num_stores,0,-1):
+                        curr_st_inst = program_bb[bb_index].store_addr_map[
+                            addr][i-1]
+                        # get most recent store
+                        if tick > curr_st_inst.tick:
+                            curr_st_inst.add_load(pc)
+                            break
+
 print("Loads and stores populated")
 total_classes = 0
 total_ticks = 0
-output_filename = "%s_store_equivalence.txt" % app_name
-output_file = open(output_filename, "wb")
+output_file = "%s_store_equivalence.txt" % app_name
+output = open(output_file, "w")
+output.write("pc:population:pilot:members\n")
 for bb_id in basicblocks:
     for j in range(len(bb_map[bb_id][0].store_addr_map)):
         addr_list = bb_map[bb_id][0].store_addr_map.keys()
@@ -155,18 +146,27 @@ for bb_id in basicblocks:
                 ld_pc_pattern = "".join(curr_st_inst.loads)
                 if ld_pc_pattern != "":
                     if ld_pc_pattern not in store_equiv_map:
-                        store_equiv_map[ld_pc_pattern] = []
+                        store_equiv_map[ld_pc_pattern] = [
+                                curr_st_inst.pc]
                     store_equiv_map[ld_pc_pattern].append(curr_st_inst.tick)
             for ld_pc_pattern in store_equiv_map:
                 store_equiclass = "%s:" % store_equiv_map[ld_pc_pattern][0]
-                store_equiclass += "%d:" % len(store_equiv_map[
-                    ld_pc_pattern])
-                for tick in store_equiv_map[ld_pc_pattern]:
+                store_equiclass += "%d:" % (len(store_equiv_map[
+                        ld_pc_pattern])-1)
+                # pick a random pilot
+                rand_tick_idx = random.randint(1,
+                        len(store_equiv_map[ld_pc_pattern])-1)
+                rand_tick = store_equiv_map[ld_pc_pattern][
+                        rand_tick_idx]
+                store_equiclass += "%s:" % rand_tick
+                for i in range(1,
+                        len(store_equiv_map[ld_pc_pattern])):
+                    tick = store_equiv_map[ld_pc_pattern][i]
                     store_equiclass += " %s" % tick
                     total_ticks += 1
                 total_classes += 1
-                output_file.write("%s\n" % store_equiclass)
-output_file.close()
+                output.write("%s\n" % store_equiclass)
+output.close()
 
 print("Total classes: %d" % total_classes)
 print("Total ticks in file: %d" % total_ticks)

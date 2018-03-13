@@ -27,7 +27,7 @@ int_reg_info_64 = [ "rax", "rbx", "rcx", "rdx", "rbp", "rsi", "rdi",
 
 int_reg_info_32 = [ "eax", "ebx", "ecx", "edx", "ebp", "esi", "edi",
                 "esp" ]
-int_reg_info_16 = [ "ax,", "bx", "cx", "dx", "bp", "si", "di", "sp" ]
+int_reg_info_16 = [ "ax", "bx", "cx", "dx", "bp", "si", "di", "sp" ]
 
 int_reg_info_8 = [ "ah", "bh", "ch", "dh", "al", "bl", "cl", "dl" ] 
 

@@ -74,6 +74,14 @@ program_bb = [] # program represented as basic blocks with tick value at start o
 
 
 for cind in range(0,len(conins_index)-1):
+    if cind == 0:
+        ctrl_start = conins_index[0]
+        if ctrl_start > 1:
+            bbstart = tick_pc_list[0][1][2:]
+            bbend = tick_pc_list[ctrl_start-1][1][2:]
+            tick_val = int(tick_pc_list[0][0])
+            basicblocks.append([str(bbstart), str(bbend)])
+            program_bb.append([tick_val, 0])
     if conins_index[cind+1] - conins_index[cind] >= 2: # check if there are PCs between two control instructions
         bbstart = tick_pc_list[conins_index[cind] + 1][1][2:]
         bbend = tick_pc_list[conins_index[cind+1] - 1][1][2:]
@@ -141,27 +149,6 @@ for main_index in range(0,len(program_bb)-equiclass_depth+1):
     bb_id = program_bb[index][1]
     create_equiclass(bbseq, tick_val, index, bb_id)
     
-#     if bb_id not in equiclass_map:
-#         equiclass_map[bb_id] = {}
-#         equiclass_index_map[bb_id] = {}
-#         equiclass_ticks_map[bb_id] = {}
-#     for equiv_id in equiclass_map[bb_id]: 
-#         if bbseq == equiclass_map[bb_id][equiv_id]:
-#             equiv_match = True
-#             equiclass_index_map[bb_id][equiv_id].append(index)
-#             equiclass_ticks_map[bb_id][equiv_id].append(tick_val)
-#             break
-#     if not equiv_match:
-#         equiclass_map[bb_id][index] = bbseq
-#         equiclass_index_map[bb_id][index] = [index]
-#         equiclass_ticks_map[bb_id][index] = [tick_val]
-#         equiv_id = index
-# 
-# 
-#     # check number of equiclasses for each bb
-#     if bb_id not in equiclass_bb_count:
-#         equiclass_bb_count[bb_id] = set()
-#     equiclass_bb_count[bb_id].add(equiv_id)
     
     # dynamically resize until the number of equivalence classes within cap
     if len(equiclass_bb_count[bb_id]) > equiclass_cap:
@@ -185,19 +172,6 @@ for main_index in range(0,len(program_bb)-equiclass_depth+1):
                 
                 create_equiclass(bbseq, tick_val, index, bb_id)
                 
-#                 for equiv_id in equiclass_map[bb_id]: 
-#                     if bbseq == equiclass_map[bb_id][equiv_id]:
-#                         equiv_match = True
-#                         equiclass_index_map[bb_id][equiv_id].append(index)
-#                         equiclass_ticks_map[bb_id][equiv_id].append(tick_val)
-#                         break
-#                 if not equiv_match:
-#                     equiclass_map[bb_id][index] = bbseq
-#                     equiclass_index_map[bb_id][index] = [index]
-#                     equiclass_ticks_map[bb_id][index] = [tick_val]
-#                     equiv_id = index
-# 
-#                 equiclass_bb_count[bb_id].add(equiv_id)
             new_depth -= 1
 #    print("Finished iteration: %d" % index)    
 
@@ -211,27 +185,6 @@ for main_index in range(len(program_bb)-equiclass_depth,len(program_bb)):
 
     create_equiclass(bbseq, tick_val, index, bb_id)
     
-#     if bb_id not in equiclass_map:
-#         equiclass_map[bb_id] = {}
-#         equiclass_index_map[bb_id] = {}
-#         equiclass_ticks_map[bb_id] = {}
-#     for equiv_id in equiclass_map[bb_id]: 
-#         if bbseq == equiclass_map[bb_id][equiv_id]:
-#             equiv_match = True
-#             equiclass_index_map[bb_id][equiv_id].append(index)
-#             equiclass_ticks_map[bb_id][equiv_id].append(tick_val)
-#             break
-#     if not equiv_match:
-#         equiclass_map[bb_id][index] = bbseq
-#         equiclass_index_map[bb_id][index] = [index]
-#         equiclass_ticks_map[bb_id][index] = [tick_val]
-#         equiv_id = index
-# 
-# 
-#     # check number of equiclasses for each bb
-#     if bb_id not in equiclass_bb_count:
-#         equiclass_bb_count[bb_id] = set()
-#     equiclass_bb_count[bb_id].add(equiv_id)
     
     # dynamically resize until the number of equivalence classes within cap
     if len(equiclass_bb_count[bb_id]) > equiclass_cap:
@@ -253,21 +206,6 @@ for main_index in range(len(program_bb)-equiclass_depth,len(program_bb)):
                 bbseq = [item[1] for item in program_bb[index:index+new_depth]]
                 tick_val = program_bb[index][0]
                 create_equiclass(bbseq, tick_val, index, bb_id)
-#                 equiv_id = None
-#                 
-#                 for equiv_id in equiclass_map[bb_id]: 
-#                     if bbseq == equiclass_map[bb_id][equiv_id]:
-#                         equiv_match = True
-#                         equiclass_index_map[bb_id][equiv_id].append(index)
-#                         equiclass_ticks_map[bb_id][equiv_id].append(tick_val)
-#                         break
-#                 if not equiv_match:
-#                     equiclass_map[bb_id][index] = bbseq
-#                     equiclass_index_map[bb_id][index] = [index]
-#                     equiclass_ticks_map[bb_id][index] = [tick_val]
-#                     equiv_id = index
-# 
-#                 equiclass_bb_count[bb_id].add(equiv_id)
             new_depth -= 1
 #    print("Finished iteration: %d" % index)    
         
@@ -282,28 +220,36 @@ pc_equiclass_map = {}
 
 
 bb_idx = -1
+bb_id = None
+index = None
 for item in tick_pc_list:
-    tick = item[0]
-    pc = item[1][2:]
-    if tick == program_bb[bb_idx+1][0]:
-        bb_idx += 1
-    if len(item) > 2:  # store inst check
-        if item[2] == "Write":
-            continue  # stores will be handled w/ store equiv
-    bb_id = program_bb[bb_idx][1]
-    if pc not in pc_equiclass_map:
-        pc_equiclass_map[pc] = {program_bb[bb_idx][1]:[]}
-
-    pc_equiclass_map[pc][bb_id].append(tick)
+    if bb_idx < len(program_bb)-1:
+        tick = item[0]
+        pc = item[1][2:]
+        if int(tick) == program_bb[bb_idx+1][0]:
+            bb_idx += 1
+            bb_id = program_bb[bb_idx][1]
+            index = program_bb[bb_idx][0]
+        if len(item) > 2:  # store inst check
+            if item[2] == "Write":
+                continue  # stores will be handled w/ store equiv
+        for equiv_id in equiclass_index_map[bb_id]:
+            if bb_idx in equiclass_index_map[bb_id][equiv_id]:
+                break
+        if pc not in pc_equiclass_map:
+            pc_equiclass_map[pc] = {}
+        if equiv_id not in pc_equiclass_map[pc]:
+            pc_equiclass_map[pc][equiv_id] = []
+        pc_equiclass_map[pc][equiv_id].append(tick)
 
 output_file = "%s_control_equivalence.txt" % app_name
 output = open(output_file, "w")
 output.write("pc:population:pilot:members\n")
 pc_list = sorted(pc_equiclass_map.keys())
 for pc in pc_list:
-    ctrl_equiclass = "%s:" % pc
-    for bb_id in pc_equiclass_map[pc]:
-        tick_list = pc_equiclass_map[pc][bb_id]
+    for equiv_id in pc_equiclass_map[pc]:
+        ctrl_equiclass = "%s:" % pc
+        tick_list = pc_equiclass_map[pc][equiv_id]
         ctrl_equiclass += "%d:" % len(tick_list)
         rand_tick_idx = random.randint(0,len(tick_list)-1)
         rand_tick = tick_list[rand_tick_idx]

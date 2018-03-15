@@ -3,6 +3,7 @@ import random
 import sys
 
 
+seed_val = 1  # seed to ensure consistency when selecting pilots
 
 # get information of the program counter
 
@@ -246,6 +247,7 @@ output_file = "%s_control_equivalence.txt" % app_name
 output = open(output_file, "w")
 output.write("pc:population:pilot:members\n")
 pc_list = sorted(pc_equiclass_map.keys())
+random.seed(seed_val)
 for pc in pc_list:
     for equiv_id in pc_equiclass_map[pc]:
         ctrl_equiclass = "%s:" % pc

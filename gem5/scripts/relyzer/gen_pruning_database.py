@@ -3,7 +3,7 @@
 import sys
 
 if len(sys.argv) != 2:
-    print("Usage: python gen_fault_list.py [app]")
+    print("Usage: python gen_pruning_database.py [app]")
     exit()
 
 # object to collect static pc info in fault database
@@ -75,7 +75,7 @@ for item in store_equiv_info:
     pc_map[pc].append(pc_obj)
 
 pc_list = sorted(pc_map.keys())
-output_file = app_name + "_fault_list.txt"
+output_file = app_name + "_pruning_database.txt"
 output = open(output_file, "w")
 output.write("pc def_pc do_inject src_regs dest_regs is_mem pilot\n")
 for pc in pc_list:

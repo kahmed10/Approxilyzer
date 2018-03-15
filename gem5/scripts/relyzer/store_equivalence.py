@@ -2,6 +2,9 @@
 import random
 import sys
 
+
+seed_val = 1  # seed to ensure consistency when selecting pilots
+
 class basic_block:
     def __init__(self,bb_id,tick_start):
         self.bb_id = bb_id
@@ -129,9 +132,12 @@ for item in trace_list:
                             break
 
 print("Loads and stores populated")
+
+random.seed(seed_val)
 total_classes = 0
 total_ticks = 0
 output_file = "%s_store_equivalence.txt" % app_name
+
 output = open(output_file, "w")
 output.write("pc:population:pilot:members\n")
 for bb_id in basicblocks:
@@ -141,8 +147,12 @@ for bb_id in basicblocks:
             store_equiv_map = {}
             for i in range(len(bb_map[bb_id])):
                 addr_list = bb_map[bb_id][i].store_addr_map.keys()
-                curr_st_inst = bb_map[bb_id][i].store_addr_map[
-                    addr_list[j]][k]
+                try:
+                    curr_st_inst = bb_map[bb_id][i].store_addr_map[
+                        addr_list[j]][k]
+                except:
+                    print("bb_id: %s, i: %d, j: %d, k: %d" % (bb_id,
+                            i, j, k))
                 ld_pc_pattern = "".join(curr_st_inst.loads)
                 if ld_pc_pattern != "":
                     if ld_pc_pattern not in store_equiv_map:

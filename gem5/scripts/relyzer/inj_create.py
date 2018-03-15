@@ -11,7 +11,7 @@ if len(sys.argv) != 3:
 
 app_name = sys.argv[1]
 isa = sys.argv[2]
-fault_info_file = app_name + "_fault_list.txt"
+fault_info_file = app_name + "_pruning_database.txt"
 mem_bounds_file = app_name + "_mem_bounds.txt"
 
 

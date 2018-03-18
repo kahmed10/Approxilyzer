@@ -10,7 +10,10 @@ class basic_block:
         self.bb_id = bb_id
         self.tick_start = tick_start
         self.store_addr_map = {}
+        self.store_insts = []
         self.has_stores = False
+    def __repr__(self):
+        return "basic block: (%s,%s)" % (self.bb_id[0],self.bb_id[1])
 
 class st_inst:
     def __init__(self,pc,addr,tick):
@@ -18,6 +21,8 @@ class st_inst:
         self.addr = addr
         self.tick = tick
         self.loads = []
+    def __repr__(self):
+        return "store addr of pc %s: %s" % (self.pc, self.addr)
     def add_load(self,load_pc):
         self.loads.append(load_pc)
 
@@ -106,6 +111,7 @@ for index in range(len(ctrl_inst_index)-1):
 print("Basic blocks created.")
 
 bb_index = -1
+st_index = 0
 for item in trace_list:
     tick = int(item[0])
     addr = item[-1]
@@ -113,23 +119,23 @@ for item in trace_list:
     if not pc_control_map[pc]:
         if tick in tick_starts:
             bb_index += 1
+            st_index = 0
         if len(item) == 4:  # ld/st instruction
             if item[-2] == "Write":
+                curr_st = st_inst(pc,addr,tick)
+                program_bb[bb_index].store_insts.append(curr_st)
                 if addr not in program_bb[bb_index].store_addr_map:
                     program_bb[bb_index].store_addr_map[addr] = []
                 program_bb[bb_index].store_addr_map[addr].append(
-                        st_inst(pc,addr,tick))
+                    st_index)
+                st_index += 1
             elif item[-2] == "Read":
                 if addr in program_bb[bb_index].store_addr_map:
-                    num_stores = len(program_bb[bb_index].store_addr_map[
-                            addr])
-                    for i in range(num_stores,0,-1):
-                        curr_st_inst = program_bb[bb_index].store_addr_map[
-                            addr][i-1]
-                        # get most recent store
-                        if tick > curr_st_inst.tick:
-                            curr_st_inst.add_load(pc)
-                            break
+                    last_store = program_bb[bb_index].store_addr_map[
+                        addr][-1]  # captures last store if addr matches
+                    program_bb[bb_index].store_insts[last_store].add_load(
+                        pc)
+
 
 print("Loads and stores populated")
 
@@ -141,41 +147,52 @@ output_file = "%s_store_equivalence.txt" % app_name
 output = open(output_file, "w")
 output.write("pc:population:pilot:members\n")
 for bb_id in basicblocks:
-    for j in range(len(bb_map[bb_id][0].store_addr_map)):
-        addr_list = bb_map[bb_id][0].store_addr_map.keys()
-        for k in range(len(bb_map[bb_id][0].store_addr_map[addr_list[j]])):
-            store_equiv_map = {}
-            for i in range(len(bb_map[bb_id])):
-                addr_list = bb_map[bb_id][i].store_addr_map.keys()
-                try:
-                    curr_st_inst = bb_map[bb_id][i].store_addr_map[
-                        addr_list[j]][k]
-                except:
-                    print("bb_id: %s, i: %d, j: %d, k: %d" % (bb_id,
-                            i, j, k))
-                ld_pc_pattern = "".join(curr_st_inst.loads)
-                if ld_pc_pattern != "":
-                    if ld_pc_pattern not in store_equiv_map:
-                        store_equiv_map[ld_pc_pattern] = [
-                                curr_st_inst.pc]
-                    store_equiv_map[ld_pc_pattern].append(curr_st_inst.tick)
-            for ld_pc_pattern in store_equiv_map:
-                store_equiclass = "%s:" % store_equiv_map[ld_pc_pattern][0]
-                store_equiclass += "%d:" % (len(store_equiv_map[
-                        ld_pc_pattern])-1)
-                # pick a random pilot
-                rand_tick_idx = random.randint(1,
-                        len(store_equiv_map[ld_pc_pattern])-1)
-                rand_tick = store_equiv_map[ld_pc_pattern][
-                        rand_tick_idx]
-                store_equiclass += "%s:" % rand_tick
-                for i in range(1,
-                        len(store_equiv_map[ld_pc_pattern])):
-                    tick = store_equiv_map[ld_pc_pattern][i]
-                    store_equiclass += " %s" % tick
-                    total_ticks += 1
-                total_classes += 1
-                output.write("%s\n" % store_equiclass)
+    for j in range(len(bb_map[bb_id][0].store_insts)):
+        store_equiv_map = {}
+        empty_load_map = {}  # stores with no subsequent loads
+        for i in range(len(bb_map[bb_id])):
+            curr_st_inst = bb_map[bb_id][i].store_insts[j]
+            ld_pc_pattern = "".join(curr_st_inst.loads)
+            if ld_pc_pattern != "":
+                if ld_pc_pattern not in store_equiv_map:
+                    store_equiv_map[ld_pc_pattern] = [
+                        curr_st_inst.pc]  # pattern starts with pc
+                store_equiv_map[ld_pc_pattern].append(curr_st_inst.tick)
+            else:
+                pc = curr_st_inst.pc
+                if pc  not in empty_load_map:
+                    empty_load_map[pc] = []
+                empty_load_map[pc].append(curr_st_inst.tick)
+        for ld_pc_pattern in store_equiv_map:
+            store_equiclass = "%s:" % store_equiv_map[ld_pc_pattern][0]
+            store_equiclass += "%d:" % (len(store_equiv_map[
+                ld_pc_pattern])-1)
+            # pick a random pilot
+            rand_tick_idx = random.randint(1,
+                len(store_equiv_map[ld_pc_pattern])-1)
+            rand_tick = store_equiv_map[ld_pc_pattern][
+                rand_tick_idx]
+            store_equiclass += "%s:" % rand_tick
+            for i in range(1,
+                    len(store_equiv_map[ld_pc_pattern])):
+                tick = store_equiv_map[ld_pc_pattern][i]
+                store_equiclass += " %s" % tick
+                total_ticks += 1
+            total_classes += 1
+            output.write("%s\n" % store_equiclass)
+        for pc in empty_load_map:
+            store_equiclass = "%s:" % pc
+            num_dynamic_insts = len(empty_load_map[pc])
+            store_equiclass += "%d:" % num_dynamic_insts
+            rand_tick_idx = random.randint(0,num_dynamic_insts-1)
+            rand_tick = empty_load_map[pc][rand_tick_idx]
+            store_equiclass += "%s:" % rand_tick
+            for i in range(num_dynamic_insts):
+                tick = empty_load_map[pc][i]
+                store_equiclass += " %s" % tick
+                total_ticks += 1
+            total_classes += 1
+            output.write("%s\n" % store_equiclass)
 output.close()
 
 print("Total classes: %d" % total_classes)

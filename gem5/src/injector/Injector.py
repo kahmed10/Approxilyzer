@@ -12,5 +12,5 @@ class Injector(SimObject):
     injTick = Param.Tick(0, "tick to inject fault")
     regType = Param.Int(0, "type of register (0 = int, 1 = float, 2 = double)")
     srcDest = Param.Int(0, "source or destinate register (0 = src, 1 = dest")
-    timeout = Param.Tick(10000000000, "timeout ticks")
+    timeout = Param.Tick(50000000000, "timeout ticks")
     goldenFile = Param.String("", "Filename of golden trace")

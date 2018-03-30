@@ -375,6 +375,15 @@ static std::map<std::string, int> x86IntRegConverter =
 // that moves xmm1_high->xmm2_high, and xmm1_low->xmm2_low
 static std::map<std::string, int> x86FloatRegConverter =
 {
+    {"fpr0", X86ISA::FloatRegIndex::FLOATREG_FPR0},
+    {"fpr1", X86ISA::FloatRegIndex::FLOATREG_FPR1},
+    {"fpr2", X86ISA::FloatRegIndex::FLOATREG_FPR2},
+    {"fpr3", X86ISA::FloatRegIndex::FLOATREG_FPR3},
+    {"fpr4", X86ISA::FloatRegIndex::FLOATREG_FPR4},
+    {"fpr5", X86ISA::FloatRegIndex::FLOATREG_FPR5},
+    {"fpr6", X86ISA::FloatRegIndex::FLOATREG_FPR7},
+    {"fpr7", X86ISA::FloatRegIndex::FLOATREG_FPR7},
+
     {"xmm0", X86ISA::FloatRegIndex::FLOATREG_XMM0_LOW},
     {"xmm0_low", X86ISA::FloatRegIndex::FLOATREG_XMM0_LOW},
     {"xmm0_high", X86ISA::FloatRegIndex::FLOATREG_XMM0_HIGH},

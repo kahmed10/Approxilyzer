@@ -259,6 +259,7 @@ class BaseCPU : public MemObject
     FaultInjector::Injector* injector;
     bool didInject;
     bool nextTick;
+    Tick prevTick;
     int idx;
 
   public:

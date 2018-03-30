@@ -257,6 +257,7 @@ BaseCPU::BaseCPU(Params *p, bool is_checker)
     injector = params()->injector;
     didInject = false;
     nextTick = false;
+    prevTick = 0;
     if (params()->isa.size() != numThreads) {
         fatal("Number of ISAs (%i) assigned to the CPU does not equal number "
               "of threads (%i).\n", params()->isa.size(), numThreads);

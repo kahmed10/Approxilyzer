@@ -579,6 +579,11 @@ BaseSimpleCPU::preExecute()
             {
                 exitSimLoop("Detected:Timeout\n");
             }
+            prevTick = curTick();
+            if (prevTick == 2363105503500)
+            {
+                DPRINTFN("%llu\n", prevTick);
+            }
         }
 #if TRACING_ON
         string testTrace;

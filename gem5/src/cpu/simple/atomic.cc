@@ -565,6 +565,7 @@ AtomicSimpleCPU::tick()
 
         // We must have just got suspended by a PC event
         if (_status == Idle) {
+            DPRINTFN("CPU got here");
             tryCompleteDrain();
             return;
         }
@@ -670,6 +671,8 @@ AtomicSimpleCPU::tick()
 
     if (_status != Idle)
         reschedule(tickEvent, curTick() + latency, true);
+    else
+        DPRINTFN("CPU is idle\n");
 }
 
 void

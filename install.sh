@@ -13,5 +13,12 @@ else
     fi
 fi
 
-mkdir -p workloads/apps
-mkdir -p workloads/checkpoint
+mkdir -p workloads/x86/apps
+mkdir -p workloads/x86/checkpoint
+
+mkdir -p workloads/sparc/apps
+mkdir -p workloads/sparc/checkpoint
+
+mkdir -p gem5/outputs/x86
+mkdir -p gem5/outputs/sparc
+

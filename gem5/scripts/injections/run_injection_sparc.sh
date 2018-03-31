@@ -15,9 +15,9 @@ id=$5
 out_id=$(( $id % 208)) # 208 is the number of cores
 
 CHKPT_DIR=$APPROXGEM5/workloads/sparc/checkpoint
-GEM5_DIR="/shared/workspace/kahmed10/Approxilyzer/gem5"
+GEM5_DIR=$APPROXGEM5/gem5
 SCRIPTS_DIR=$GEM5_DIR/scripts/injections
-DISK_DIR="/shared/workspace/kahmed10/Approxilyzer/dist/m5/system/disks"
+DISK_DIR=$APPROXGEM5/dist/m5/system/disks
 TMP_DIR=/scratch/kahmed10/m5out_$id
 OUT_DIR=$GEM5_DIR/outputs/sparc
 out_file=$OUT_DIR/$app_name-${out_id}.output

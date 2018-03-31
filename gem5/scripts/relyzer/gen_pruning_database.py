@@ -25,6 +25,7 @@ def check_string(obj):
         string = obj
     return string
 
+ignored_ops = {"clr,prefetch"}
 
 app_name = sys.argv[1]
 ctrl_equiv_file = app_name + "_control_equivalence.txt"
@@ -40,30 +41,34 @@ store_equiv_info = [i.split(':') for i in open(
 def_use_info = {i.split()[0]:i.split()[1] for i in open(
         def_use_file).read().splitlines()[1:]}
 mem_inst_info = set([i for i in open(
-        mem_inst_file).read().splitlines()[1:]])
+        mem_inst_file).read().splitlines()])
 pc_regs_info = {i.split()[0]:i.split()[1:] for i in open(
         parsed_dis_file).read().splitlines()[1:]}
 
 pc_map = {}
 # when converting pc_regs_info to a map, indices are reduced by 1
+op_idx = 0
 src_reg_idx = 2
 dest_reg_idx = 3
 for item in ctrl_equiv_info:
     pc = item[0]
     pilot = item[2]
     pc_obj = pc_info(pc,pilot)
+    pc_obj.op = pc_regs_info[pc][op_idx]
     if pc in def_use_info:
         pc_obj.def_pc = def_use_info[pc]
         # check if there are source registers
         if pc_regs_info[pc][src_reg_idx] == "None":
             pc_obj.do_inject = "False"
-    if pc in mem_inst_file:
+    if pc in mem_inst_info:
         pc_obj.is_mem = "True"
     pc_obj.src_regs = pc_regs_info[pc][src_reg_idx]
     pc_obj.dest_regs = pc_regs_info[pc][dest_reg_idx]
     if pc not in pc_map:
         pc_map[pc] = []
-    pc_map[pc].append(pc_obj)
+    if pc_obj.src_regs != "None" or  pc_obj.dest_regs != "None" and \
+            pc_obj.op not in ignored_ops:
+        pc_map[pc].append(pc_obj)
 
 for item in store_equiv_info:
     pc = item[0]

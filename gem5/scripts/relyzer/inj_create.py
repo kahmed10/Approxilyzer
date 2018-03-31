@@ -17,8 +17,9 @@ mem_bounds_file = app_name + "_mem_bounds.txt"
 
 fault_info = [i.split() for i in open(
     fault_info_file).read().splitlines()[1:]]
-mem_bound = min([i.split() for i in open(
-    mem_bounds_file).read().splitlines()[1:]])
+mem_bounds = map(int, open(
+             mem_bounds_file).read().splitlines()[1].split())
+mem_bound = max(mem_bounds)
 
 
 int_reg_info_64 = [ "rax", "rbx", "rcx", "rdx", "rbp", "rsi", "rdi",

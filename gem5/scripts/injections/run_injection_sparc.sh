@@ -66,17 +66,22 @@ elif grep -q "error" $TMP_DIR/system.t1000.pterm; then
     cleanup
     exit 0
 fi
-python $SCRIPTS_DIR/quick_parse.py $TMP_DIR/system.t1000.pterm > $TMP_DIR/output.txt
-if [ ! -s "$TMP_DIR/output.txt" ]; then
-    rm -f $TMP_DIR/output.txt
+
+app_faulty_output="output.txt"
+if [ "$app_name" == "sobel" ]; then
+    app_faulty_output="output.pgm"
+fi
+python $SCRIPTS_DIR/quick_parse.py $TMP_DIR/system.t1000.pterm > $TMP_DIR/$app_faulty_output
+if [ ! -s "$TMP_DIR/$app_faulty_output" ]; then
+    rm -f $TMP_DIR/$app_faulty_output
 fi
 
-if [ -f "$TMP_DIR/output.txt" ]; then
-    if cmp -s $TMP_DIR/$app_output $TMP_DIR/output.txt; then
+if [ -f "$TMP_DIR/$app_faulty_output" ]; then
+    if cmp -s $TMP_DIR/$app_output $TMP_DIR/$app_faulty_output; then
         echo ${fi_args}"::Masked" >> $out_file
 
     else
-        result=`perl $SCRIPTS_DIR/detailed_app_level_analysis.pl $app_name $TMP_DIR/output.txt $id`
+        result=`perl $SCRIPTS_DIR/detailed_app_level_analysis.pl $app_name $TMP_DIR/$app_faulty_output $id`
         echo ${fi_args}"::$result" >> $out_file
     fi
 else

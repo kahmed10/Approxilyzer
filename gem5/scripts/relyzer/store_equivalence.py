@@ -5,7 +5,7 @@ import sys
 
 seed_val = 1  # seed to ensure consistency when selecting pilots
 
-class basic_block:
+class basic_block(object):
     def __init__(self,bb_id,tick_start):
         self.bb_id = bb_id
         self.tick_start = tick_start
@@ -15,7 +15,7 @@ class basic_block:
     def __repr__(self):
         return "basic block: (%s,%s)" % (self.bb_id[0],self.bb_id[1])
 
-class st_inst:
+class st_inst(object):
     def __init__(self,pc,addr,tick):
         self.pc = pc
         self.addr = addr

@@ -70,10 +70,10 @@ class instruction(object):
             fields = in_string.split()
             self.pc = fields[0]
             self.op = fields[1]
-            self.ctrl_flag = bool(fields[2])
+            self.ctrl_flag = True if 'True' in fields[2] else False
             self.src_regs = fields[3].split(',')
             self.mem_src_regs = fields[4].split(',')
-            self.is_mem = bool(fields[5])
+            self.is_mem = True if 'True' in fields[5] else False
             self.dest_reg = fields[6] if fields[6] != 'None' else None
             self.max_bits = int(fields[7])
         else: 

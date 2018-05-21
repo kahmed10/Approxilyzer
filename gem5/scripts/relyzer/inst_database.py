@@ -4,18 +4,13 @@ import re
 
 from types import NoneType
 
-def isControlInstruction(strin):
-    return 'jmp' in strin or 'je' in strin or 'jn' in \
-        strin or 'jg' in strin or 'ja' in strin or 'jl' in strin or \
-        'jb' in strin or 'jo' in strin or 'jz' in strin or 'js' in strin \
-        or 'call' in strin or 'loop' in strin or 'ret' in strin
-
 single_ops = ['push', 'sar', 'sal', 'shl', 'shr']
 
 arithmetic_ops = ['add', 'sub', 'mul', 'div', 'neg', 'adc', 'sbb', 'inc', 'dec']
 
 control_ops = ['jmp', 'je', 'jn', 'jg', 'ja', 'jl', 'jb', 'jo', 'jz',
                'js', 'call', 'loop', 'ret']
+
 
 valid_pattern = re.compile("^\s+[0-9a-fA-F]+:\s*[a-zA-Z]+.*")
 # we assume stack and inst registers (rbp,rsp,rip) are protected
@@ -80,9 +75,13 @@ class instruction(object):
             # instructions like addss only affect 32 bits
             if op.endswith('ss'):
                 self.max_bits = 32
+            
+            # push and pop instructions affect stack
+            if 'push' in op or 'pop' in op:
+                self.is_mem = True
 
             for control_op in control_ops:
-                if self.op in control_op:
+                if self.op in control_op or self.op.startswith(control_op):
                     self.ctrl_flag = True
                     break
         
@@ -151,6 +150,7 @@ class instruction(object):
         '''
         if is_mem_access(search_string):
             is_mem = True
+            self.is_mem = True
         reg = self._find_reg(search_string)
         if reg is not None:
             if is_mem:

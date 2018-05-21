@@ -18,7 +18,7 @@ control_ops = ['jmp', 'je', 'jn', 'jg', 'ja', 'jl', 'jb', 'jo', 'jz',
                'js', 'call', 'loop', 'ret']
 
 valid_pattern = re.compile("^\s+[0-9a-fA-F]+:\s*[a-zA-Z]+.*")
-# we assume stack registers (rbp,rsp) are protected
+# we assume stack and inst registers (rbp,rsp,rip) are protected
 reg_pattern = ['%ax', '%al', '%ah', '%rax', '%eax',
                '%bx', '%bl', '%bh', '%rbx', '%ebx',
                '%cx', '%cl', '%ch', '%rcx', '%ecx',
@@ -129,15 +129,19 @@ class instruction(object):
         '''
         Iterates through possible registers, finds possible match
         Args: search_string - string that may contain register
-        Returns: reg - string if register found, None otherwise
+        Returns: regs - string if register(s) found, None otherwise
         '''
-        reg = None
+        regs = []
         for reg_match in reg_matches:
             match = reg_match.search(search_string)
             if match:
                 reg = match.group(0).lstrip('%')
-                break
-        return reg
+                regs.append(reg)
+        if len(regs) > 0:
+            regs = ','.join(regs)
+        else:
+            regs = None
+        return regs
 
     def add_src_reg(self,search_string,is_mem=False):
         '''
@@ -145,6 +149,8 @@ class instruction(object):
         Args: search_string - string that may contain register
               is_mem - flag that adds to the mem_src_regs field
         '''
+        if is_mem_access(search_string):
+            is_mem = True
         reg = self._find_reg(search_string)
         if reg is not None:
             if is_mem:
@@ -157,14 +163,17 @@ class instruction(object):
         adds appropriate destination register if it exists
         Args: search_string - string that may contain register
         '''
-        self.dest_reg = self._find_reg(search_string)
-        
-        # arithmetic instructions in x86 have both src and dest
-        # (ex. add %rax, %rbx; rbx also becomes a src)
-        for arithmetic_op in arithmetic_ops:
-            if self.op in arithmetic_op:
-                self.add_src_reg(search_string)
-                break
+        if not is_mem_access(search_string):
+            self.dest_reg = self._find_reg(search_string)
+            
+            # arithmetic instructions in x86 have both src and dest
+            # (ex. add %rax, %rbx; rbx also becomes a src)
+            for arithmetic_op in arithmetic_ops:
+                if self.op in arithmetic_op:
+                    self.add_src_reg(search_string)
+                    break
+        else:
+            self.add_src_reg(search_string,is_mem=True)
     
 
 
@@ -182,11 +191,8 @@ class inst_database(object):
             if valid_pattern.match(line) and '(bad)' not in line:
                 data = line[2:].rstrip('\r\n').split(':	')
                 pc = data[0]
-                #op = data[1].split('\t')[1].split()[0]
                 op = data[1].split(' ', 1)[0]
-                #op = data[1].split(' ', 1)[0]
                 reg = []
-                dest_reg = None
                 if '.' in op:
                     try:
                         op = data[1].split(' ', 1)[1].split(' ')[0]
@@ -211,26 +217,26 @@ class inst_database(object):
                     if not is_src_op:
                         if len(comma_split[0]) > 0:
                             dest_info = comma_split[0]
-                            if not is_mem_access(dest_info):
-                                inst.add_dest_reg(dest_info)
-                            else:
-                                inst.add_src_reg(dest_info,is_mem=True)
+                            inst.add_dest_reg(dest_info)
                         
                 elif len(comma_split) == 2:
                     src_info = comma_split[0]
                     dest_info = comma_split[-1]
                     inst.add_src_reg(src_info)
-                    if not is_mem_access(dest_info):
-                        inst.add_dest_reg(dest_info)
-                    else:
-                        inst.add_src_reg(dest_info,is_mem=True)
+                    inst.add_dest_reg(dest_info)
 
                 elif len(comma_split) == 3:
                     src_info = comma_split[1]
                     dest_info = comma_split[-1]
                     inst.add_src_reg(src_info)
-                    if not dest_reg:
-                        inst.add_dest_reg(dest_info)
+                    inst.add_dest_reg(dest_info)
+                # usually referring to memory (ex. imul (%rcx,%r8,1),%edx)
+                elif len(comma_split) == 4:
+                    src_info = ','.join(comma_split[0:2])
+                    dest_info = comma_split[-1]
+                    inst.add_src_reg(src_info,is_mem=True)
+                    inst.add_dest_reg(dest_info)
+                    
                 self.insts.append(inst)
         f.close()
 

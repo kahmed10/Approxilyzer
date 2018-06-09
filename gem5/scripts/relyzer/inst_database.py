@@ -12,7 +12,7 @@ control_ops = ['jmp', 'je', 'jn', 'jg', 'ja', 'jl', 'jb', 'jo', 'jz',
                'js', 'call', 'loop', 'ret']
 
 
-valid_pattern = re.compile("^\s+[0-9a-fA-F]+:\s*[a-zA-Z]+.*")
+valid_pattern = re.compile('^\s+[0-9a-fA-F]+:\s*[a-zA-Z]+.*')
 # we assume stack and inst registers (rbp,rsp,rip) are protected
 reg_pattern = ['%ax', '%al', '%ah', '%rax', '%eax',
                '%bx', '%bl', '%bh', '%rbx', '%ebx',
@@ -21,7 +21,7 @@ reg_pattern = ['%ax', '%al', '%ah', '%rax', '%eax',
                '%si', '%rsi', '%esi',
                '%di', '%rdi', '%edi',
                '%r8', '%r9', '%r10', '%r11', '%r12', '%r13', '%r14', '%r15',
-               '%xmm0', '%xmm1', '%xmm2', '%xmm3', '%xmm4', '%xmm5', '%xmm6',
+               '%xmm0', '%xmm1(?![0-5])', '%xmm2', '%xmm3', '%xmm4', '%xmm5', '%xmm6',
                '%xmm13', '%xmm7', '%xmm8', '%xmm9', '%xmm10', '%xmm11', '%xmm12',
                '%xmm14', '%xmm15',
                '%fpr0', '%fpr1', '%fpr2', '%fpr3', '%fpr4', '%fpr5', '%fpr6',
@@ -67,7 +67,11 @@ class instruction(object):
             self.op = fields[1]
             self.ctrl_flag = True if 'True' in fields[2] else False
             self.src_regs = fields[3].split(',')
+            if 'None' in self.src_regs:  # string may have no src_regs
+                self.src_regs = []
             self.mem_src_regs = fields[4].split(',')
+            if 'None' in self.mem_src_regs:
+                self.mem_src_regs = []
             self.is_mem = True if 'True' in fields[5] else False
             self.dest_reg = fields[6] if fields[6] != 'None' else None
             self.max_bits = int(fields[7])
@@ -169,7 +173,7 @@ class instruction(object):
             # arithmetic instructions in x86 have both src and dest
             # (ex. add %rax, %rbx; rbx also becomes a src)
             for arithmetic_op in arithmetic_ops:
-                if self.op in arithmetic_op:
+                if arithmetic_op in self.op:
                     self.add_src_reg(search_string)
                     break
         else:
@@ -188,11 +192,13 @@ class inst_database(object):
         f = open(dis_filename, 'rb')
         for line in f:
             line = line[:9] + line[31:]
+            # make sure line actually contains contents to parse
             if valid_pattern.match(line) and '(bad)' not in line:
                 data = line[2:].rstrip('\r\n').split(':	')
                 pc = data[0]
                 op = data[1].split(' ', 1)[0]
                 reg = []
+                # many corner cases in x86, one being a '.' in the op
                 if '.' in op:
                     try:
                         op = data[1].split(' ', 1)[1].split(' ')[0]
@@ -242,12 +248,17 @@ class inst_database(object):
 
 
     def print_database(self, output_filename):
+        '''
+        prints the database to a file.
+        Args: output_filename - name of location of where to save database to
+        '''
         wf = open(output_filename,'w') 
         wf.write('PC OP CONTROL_FLAG SRC_REGS SRC_MEM_REGS IS_MEM DEST_REG MAX_BITS\n')
         for inst in self.insts:
             writeln = inst.print_inst() 
             wf.write("%s\n" % writeln)
         wf.close()
+
 if __name__ == '__main__':
     import sys
 

@@ -2,15 +2,23 @@
 
 # this script parses the trace and gets only the cycle and PC
 import gzip
+import os
 import sys
 
-if len(sys.argv) != 4:
-    print("Usage: python parse_mem.py [in_file] [main_tick_start] [main_tick_end]")
+if len(sys.argv) != 5:
+    print("Usage: python parse_mem.py [app_name] [main_tick_start] [main_tick_end] [isa]")
     exit()
 
-in_file = sys.argv[1]
+app_name = sys.argv[1]
 tick_start = sys.argv[2]
 tick_end = sys.argv[3]
+isa = sys.argv[4]
+
+approx_dir = os.environ.get('APPROXGEM5')
+
+in_file_base = approx_dir + '/workloads/' + isa + '/checkpoint/' + \
+               app_name + '/' + app_name
+in_file = in_file_base + '_mem_dump.gz'
 
 start_recording = False
 stop_recording = False
@@ -21,6 +29,8 @@ else:
     dump_mem_list = open(in_file).read().splitlines()
 
 
+out_filename = app_name + '_mem_dump_parsed.txt'
+outfile = open(out_filename, 'w')
 for line in dump_mem_list:
     temp = line.split()
     if len(temp) > 0:
@@ -35,4 +45,5 @@ for line in dump_mem_list:
                 break
             if "Read" in read_or_write  or "Write" in read_or_write:
                 address = temp[10]  # consistent with gem5 tracer
-                print("%s %s %s" % (tick, read_or_write, address))
+                outfile.write("%s %s %s\n" % (tick, read_or_write, address))
+outfile.close()

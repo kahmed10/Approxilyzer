@@ -6,18 +6,21 @@ import gzip
 import os
 import sys
 
-if len(sys.argv) != 7:
-    print('Usage: python parse.py [app_name] [main_start] [main_end] [text_start] [text_end] [isa]')
+if len(sys.argv) != 5:
+    print('Usage: python parse.py [app_name] [main_start] [main_end] [isa]')
     exit()
 
 app_name = sys.argv[1]
 
 main_start = sys.argv[2]
 main_end = sys.argv[3]
-text_start = sys.argv[4]
-text_end = sys.argv[5]
 
-isa = sys.argv[6]
+inst_db_file = app_name + '_parsed.txt'
+
+inst_db_list = open(inst_db_file).read().splitlines()[1:]
+app_pcs = set(['0x' + i.split()[0] for i in inst_db_list])
+
+isa = sys.argv[4]
 
 approx_dir = os.environ.get('APPROXGEM5')
 
@@ -48,7 +51,7 @@ for line in dis_list:
         if start_recording:
             if stop_recording:
                 break
-            if pc >= text_start and pc <= text_end:
+            if pc in app_pcs:
                 output.write('%s %s\n' % (inst_num, pc))
                 inst_num_list.append(inst_num)
                 inst_num_pc_map[inst_num] = pc
@@ -79,7 +82,7 @@ if isa == 'x86':
             if start_recording:
                 if stop_recording:
                     break
-                if pc >= text_start and pc <= text_end:
+                if pc in app_pcs:
                     if pc == inst_num_pc_map[inst_num_list[inst_num_idx]]:
                         if pc_num == '0':  # reset on context switch
                             inst_num_map[inst_num_list[inst_num_idx]]=[]

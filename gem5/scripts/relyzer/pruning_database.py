@@ -116,7 +116,7 @@ class pruning_database(object):
                         if trace_item.pc == dep_pc:
                             dep_pc_pilot = trace_item.inst_num
                             self._add_to_pc_map(dep_pc, dep_pc_pilot, 'store')
-                            store_equiv_pcs.add(pc)
+                            store_equiv_pcs.add(dep_pc)
                             break
                 
         for item in ctrl_equiv_info:

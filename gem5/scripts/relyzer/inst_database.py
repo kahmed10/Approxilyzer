@@ -13,13 +13,16 @@ control_ops = ['jmp', 'je', 'jn', 'jg', 'ja', 'jl', 'jb', 'jo', 'jz',
 
 
 valid_pattern = re.compile('^\s+[0-9a-fA-F]+:\s*[a-zA-Z]+.*')
-# we assume stack and inst registers (rbp,rsp,rip) are protected
+# we assume stack registers (rbp,rsp) are protected
+# EXPERIMENTAL adding stack registers too
 reg_pattern = ['%ax', '%al', '%ah', '%rax', '%eax',
                '%bx', '%bl', '%bh', '%rbx', '%ebx',
                '%cx', '%cl', '%ch', '%rcx', '%ecx',
                '%dx', '%dl', '%dh', '%rdx', '%edx',
                '%si', '%rsi', '%esi',
                '%di', '%rdi', '%edi',
+               '%sp', '%esp', '%rsp',
+               '%bp', '%ebp', '%rbp',
                '%r8', '%r9', '%r10', '%r11', '%r12', '%r13', '%r14', '%r15',
                '%xmm0', '%xmm1(?![0-5])', '%xmm2', '%xmm3', '%xmm4', '%xmm5', '%xmm6',
                '%xmm13', '%xmm7', '%xmm8', '%xmm9', '%xmm10', '%xmm11', '%xmm12',

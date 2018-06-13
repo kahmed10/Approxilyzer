@@ -5,6 +5,8 @@
 import sys
 import random
 
+from pruning_database import pc_info
+
 if len(sys.argv) != 3:
     print('Usage: python inj_create.py [app] [isa]')
     exit()
@@ -15,7 +17,7 @@ pruning_db_file = app_name + '_pruning_database.txt'
 mem_bounds_file = app_name + '_mem_bounds.txt'
 
 
-pruning_db = [i.split() for i in open(
+pruning_db = [pc_info(None,None,None,in_string=i) for i in open(
     pruning_db_file).read().splitlines()[1:]]
 mem_bounds = map(int, open(
              mem_bounds_file).read().splitlines()[1].split())
@@ -84,55 +86,52 @@ def create_inj(isa, pilot, reg, max_bits, mem_bound=64):
         print_inj(isa, pilot, bit, reg, reg_type, 0)
 
 def create_def_inj(isa, pilot, pc, def_pc, max_bits):
-    temp = def_pc.split(':')
-    reg = temp[0]
+    reg = def_pc.reg
     reg_max_bits = reg_bits_map[reg]
     reg_type = reg_int_float_map[reg]
-    bit_widths = temp[1:]
+    bit_width = def_pc.bit_width
 
     # edge case where only bits [15:8] are checked (like %ah)
     if reg in upper_regs:
-        if bit_widths[1] == pc:
+        if bit_width[1] == pc:
             for bit in range(reg_max_bits):
                 print_inj(isa, pilot, bit, reg, reg_type, 1)
     else:
         # go through the bit widths and only inject if there was no first use
-        if bit_widths[0] == pc:
+        if bit_width[0] == pc:
             for bit in range(8):
                 print_inj(isa, pilot, bit, reg, reg_type, 1)
-        if bit_widths[1] == pc:
+        if bit_width[1] == pc:
             for bit in range(8,16):
                 print_inj(isa, pilot, bit, reg, reg_type, 1)
-        if bit_widths[2] == pc:
+        if bit_width[2] == pc:
             for bit in range(16,32):
                 print_inj(isa, pilot, bit, reg, reg_type, 1)
-        if bit_widths[3] == pc:
+        if bit_width[3] == pc:
             for bit in range(32,min(max_bits,64)):
                 print_inj(isa, pilot, bit, reg, reg_type, 1)
                     
 
 for item in pruning_db:
-    pc = item[0]
-    def_pc = item[1]
-    do_inject = item[2]
-    src_regs = item[3]
-    mem_src_regs = item[4]
-    dest_reg = item[5]
-    is_mem = item[6]
-    pilot = item[7]
-    max_bits = item[8]
-    if do_inject == 'True':
-        if src_regs != 'None':
-            src_regs = src_regs.split(',')
+    pc = item.pc
+    def_pc = item.def_pc
+    do_inject = item.do_inject
+    src_regs = item.src_regs
+    mem_src_regs = item.mem_src_regs
+    dest_reg = item.dest_reg
+    is_mem = item.is_mem
+    pilot = item.pilot
+    max_bits = item.max_bits
+    if do_inject:
+        if src_regs is not None:
             for src_reg in src_regs:
                 create_inj(isa, pilot, src_reg, max_bits)
                 
-        if mem_src_regs != 'None':
-            mem_src_regs = mem_src_regs.split(',')
+        if mem_src_regs is not None:
             for mem_src_reg in mem_src_regs:
                 create_inj(isa, pilot, mem_src_reg, max_bits, mem_bound)
                     
         # check destination register (pruning info found in def_pc)
-        if def_pc != 'None':
+        if def_pc is not None:
             create_def_inj(isa, pilot, pc, def_pc, max_bits)
 

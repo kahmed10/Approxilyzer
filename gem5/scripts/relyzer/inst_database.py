@@ -21,8 +21,8 @@ reg_pattern = ['%ax', '%al', '%ah', '%rax', '%eax',
                '%dx', '%dl', '%dh', '%rdx', '%edx',
                '%si', '%rsi', '%esi',
                '%di', '%rdi', '%edi',
-               '%sp', '%esp', '%rsp',
-               '%bp', '%ebp', '%rbp',
+#                '%sp', '%esp', '%rsp',
+#                '%bp', '%ebp', '%rbp',
                '%r8', '%r9', '%r10', '%r11', '%r12', '%r13', '%r14', '%r15',
                '%xmm0', '%xmm1(?![0-5])', '%xmm2', '%xmm3', '%xmm4', '%xmm5', '%xmm6',
                '%xmm13', '%xmm7', '%xmm8', '%xmm9', '%xmm10', '%xmm11', '%xmm12',
@@ -161,10 +161,12 @@ class instruction(object):
         reg = self._find_reg(search_string)
         if reg is not None:
             if is_mem:
-                self.is_mem = True
-                self.mem_src_regs.append(reg)
+                if reg not in self.mem_src_regs:
+                    self.is_mem = True
+                    self.mem_src_regs.append(reg)
             else:
-                self.src_regs.append(reg)
+                if reg not in self.src_regs:
+                    self.src_regs.append(reg)
     def add_dest_reg(self,search_string):
         '''
         adds appropriate destination register if it exists

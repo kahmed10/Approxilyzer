@@ -46,6 +46,21 @@ class x86_register(object):
                 'fpr4':4,'fpr5':4,'fpr6':4,'fpr7':4
         }
 
+    def get_raw_reg_size(self, reg):
+        '''
+        given an x86 register as input, return its size (in bits)
+        '''
+        reg_size = -1
+        if reg in self.reg_size_map:
+            curr_size = self.reg_size_map[reg]
+            # registers like "ah" are set to -1 in map_size_map[reg]
+            if curr_size < 3:
+                reg_size = abs(curr_size * 8)
+            elif curr_size == 3:
+                reg_size = 32
+            elif curr_size == 4:
+                reg_size = 64
+        return reg_size
         
 
     def is_alias(self, reg_1, reg_2):
@@ -123,10 +138,14 @@ class x86_def_register(object):
 
 
 if __name__ == '__main__':
-    x86_regs = x86_register()
-    print('%%ax aliases to %%eax? %r' % x86_regs.is_alias('ax','eax'))
-    print('%%ax aliases to %%ebx? %r' % x86_regs.is_alias('ax','ebx'))
-    rax = x86_def_register('rax')
-    for i in rax.bit_ranges:
-        if i is not None:
-            print('bit available')
+
+    import sys
+
+    if len(sys.argv) == 2:
+        reg = sys.argv[1]
+        x86_regs = x86_register()
+        print(x86_regs.get_raw_reg_size(reg))
+    else:
+        x86_regs = x86_register()
+        print('%%ax aliases to %%eax? %r' % x86_regs.is_alias('ax','eax'))
+        print('%%ax aliases to %%ebx? %r' % x86_regs.is_alias('ax','ebx'))

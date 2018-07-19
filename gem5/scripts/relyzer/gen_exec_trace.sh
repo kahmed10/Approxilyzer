@@ -17,14 +17,31 @@ if [ "$isa" == "x86" ]; then
     gem5_isa="X86"
 fi
 
+if [ "$isa" == "sparc" ]; then
+    gem5_isa="SPARC"
+    $GEM5_DIR/build/$gem5_isa/gem5.opt -d $CKPT_DIR \
+    --debug-flags=ExecEnable,ExecUser,ExecEffAddr,ExecTicks,ExecMacro \
+    --debug-file=${app}_dump.gz $GEM5_DIR/configs/example/fs.py -r 2
+    exit 0
+fi
+
 if [ $# -eq 3 ]; then
     disk_image=$IMG_DIR/$3
     $GEM5_DIR/build/$gem5_isa/gem5.opt -d $CKPT_DIR \
     --debug-flags=ExecEnable,ExecUser,ExecEffAddr,ExecTicks,ExecMacro \
     --debug-file=${app}_dump.gz $GEM5_DIR/configs/example/fs.py \
     --disk-image=$disk_image -r 1
+
+    $GEM5_DIR/build/$gem5_isa/gem5.opt -d $CKPT_DIR \
+    --debug-flags=ExecEnable,ExecUser,ExecEffAddr,ExecTicks,ExecMicro \
+    --debug-file=${app}_dump_micro.gz $GEM5_DIR/configs/example/fs.py \
+    --disk-image=$disk_image -r 1
 else
 $GEM5_DIR/build/$gem5_isa/gem5.opt -d $CKPT_DIR \
 --debug-flags=ExecEnable,ExecUser,ExecEffAddr,ExecTicks,ExecMacro \
 --debug-file=${app}_dump.gz $GEM5_DIR/configs/example/fs.py -r 1
+
+$GEM5_DIR/build/$gem5_isa/gem5.opt -d $CKPT_DIR \
+--debug-flags=ExecEnable,ExecUser,ExecEffAddr,ExecTicks,ExecMacro \
+--debug-file=${app}_dump_micro.gz $GEM5_DIR/configs/example/fs.py -r 1
 fi

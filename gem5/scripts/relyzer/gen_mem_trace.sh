@@ -17,6 +17,14 @@ if [ "$isa" == "x86" ]; then
     gem5_isa="X86"
 fi
 
+if [ "$isa" == "sparc" ]; then
+    gem5_isa="SPARC"
+    $GEM5_DIR/build/$gem5_isa/gem5.opt -d $CKPT_DIR \
+    --debug-flags=MemoryAccess \
+    --debug-file=${app}_mem_dump.gz $GEM5_DIR/configs/example/fs.py -r 2
+    exit 0
+fi
+
 if [ $# -eq 3 ]; then
     disk_image=$IMG_DIR/$3
     $GEM5_DIR/build/$gem5_isa/gem5.opt -d $CKPT_DIR \

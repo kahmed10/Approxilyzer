@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import re
+import sys
 
 from types import NoneType
 
@@ -14,7 +15,6 @@ control_ops = ['jmp', 'je', 'jn', 'jg', 'ja', 'jl', 'jb', 'jo', 'jz',
 
 valid_pattern = re.compile('^\s+[0-9a-fA-F]+:\s*[a-zA-Z]+.*')
 # we assume stack registers (rbp,rsp) are protected
-# EXPERIMENTAL adding stack registers too
 reg_pattern = ['%ax', '%al', '%ah', '%rax', '%eax',
                '%bx', '%bl', '%bh', '%rbx', '%ebx',
                '%cx', '%cl', '%ch', '%rcx', '%ecx',
@@ -265,7 +265,6 @@ class inst_database(object):
         wf.close()
 
 if __name__ == '__main__':
-    import sys
 
     if len(sys.argv) != 3:
         print("Test Usage: python inst_database.py [dis_file] [out_file]")

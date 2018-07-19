@@ -5,19 +5,18 @@
 import os
 import sys
 
-if len(sys.argv) != 2:
-    print('Usage: python bounding_address.py [app_name]')
+if len(sys.argv) != 3:
+    print('Usage: python bounding_address.py [app_name] [isa]')
     exit()
 
 app_name = sys.argv[1]
+isa = sys.argv[2]
 
 approx_dir = os.environ.get('APPROXGEM5')
-
 apps_dir = approx_dir + '/workloads/' + isa + '/apps/' + app_name
-if not os.path.exists(apps_dir):
-    os.makedirs(approx_dir)
+app_prefix = apps_dir + '/' + app_name
 
-mem_file = apps_dir + '/' + app_name + '_mem_dump_parsed.txt'
+mem_file = app_prefix + '_mem_dump_parsed.txt'
 mem_list = open(mem_file).read().splitlines()
 
 min_addr = None
@@ -56,7 +55,7 @@ upper_limit = 64 - max_count
 print('min bits not touched: %d' % min_count)
 print('max bits not touched: %d' % max_count)
 
-output_file = apps_dir + '/' + app_name + '_mem_bounds.txt'
+output_file = app_prefix + '_mem_bounds.txt'
 output = open(output_file, 'w')
 output.write('lower_limit upper_limit\n')
 output.write('%s %s\n' % (lower_limit,upper_limit))

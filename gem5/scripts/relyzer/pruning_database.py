@@ -1,5 +1,11 @@
 #!/usr/bin/python
 
+# This script combines analysis files (control, store, def-use, addr)
+# in order to create a pruning database.
+
+import os
+import sys
+
 from inst_database import instruction
 from trace import trace
 
@@ -55,17 +61,18 @@ def check_string(obj):
     return string
 
 class pruning_database(object):
-    def __init__(self, app_name):
+    def __init__(self, app_name, apps_dir):
 
         self.app_name = app_name
         ignored_ops = {'prefetch'}
 
-        trace_file = app_name + '_clean_dump_parsed_merged.txt'
-        ctrl_equiv_file = app_name + '_control_equivalence.txt'
-        store_equiv_file = app_name + '_store_equivalence.txt'
-        dep_stores_file = app_name + '_dependent_stores.txt'
-        def_use_file = app_name + '_def_use.txt'
-        db_file = app_name + '_parsed.txt'
+        app_prefix = apps_dir + '/' + app_name
+        trace_file = app_prefix + '_clean_dump_parsed_merged.txt'
+        ctrl_equiv_file = app_prefix + '_control_equivalence.txt'
+        store_equiv_file = app_prefix + '_store_equivalence.txt'
+        dep_stores_file = app_prefix + '_dependent_stores.txt'
+        def_use_file = app_prefix + '_def_use.txt'
+        db_file = app_prefix + '_parsed.txt'
 
         ctrl_equiv_info = [i.split(':') for i in open(
                 ctrl_equiv_file).read().splitlines()[1:]]
@@ -151,7 +158,7 @@ class pruning_database(object):
 
     def print_pruning_db(self,filename):
         
-        output_file = app_name + '_pruning_database.txt'
+        output_file = filename
         output = open(output_file, 'w')
         output.write('pc ctrl_or_store def_pc do_inject src_regs mem_src_regs dest_reg is_mem pilot max_bits\n')
         for pc in self.pc_list:
@@ -172,10 +179,17 @@ class pruning_database(object):
         output.close()
 
 if __name__ == '__main__':
-    import sys
-    if len(sys.argv) != 2:
-        print('Usage: python gen_pruning_database.py [app]')
+    if len(sys.argv) != 3:
+        print('Usage: python gen_pruning_database.py [app_name] [isa]')
         exit()
+
     app_name = sys.argv[1]
-    pruning_db = pruning_database(app_name)
-    pruning_db.print_pruning_db(app_name+'_pruning_database.txt') 
+    isa = sys.argv[2]
+
+    approx_dir = os.environ.get('APPROXGEM5')
+
+    apps_dir = approx_dir + '/workloads/' + isa + '/apps/' + app_name
+
+    pruning_db = pruning_database(app_name, apps_dir)
+    pruning_db.print_pruning_db(
+        apps_dir + '/' + app_name + '_pruning_database.txt') 

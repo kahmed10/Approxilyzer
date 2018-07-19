@@ -1,199 +1,311 @@
 #!/usr/bin/python
+
+# This script calculates store equivalence classes.
+
+import os
 import random
 import sys
 
-
-seed_val = 1  # seed to ensure consistency when selecting pilots
+from equiv_class import equiv_class
+from inst_database import instruction
+from register import x86_register
+from trace import trace
 
 class basic_block(object):
-    def __init__(self,bb_id,tick_start):
+    def __init__(self,bb_id):
         self.bb_id = bb_id
-        self.tick_start = tick_start
-        self.store_addr_map = {}
-        self.store_insts = []
-        self.has_stores = False
+        self.insts = []
+        self.st_insts = []
+        self.st_inst_idx = []
+        self.size = 0
+
     def __repr__(self):
-        return "basic block: (%s,%s)" % (self.bb_id[0],self.bb_id[1])
+        return 'basic block: %s' % (self.bb_id)
+
+class static_st_inst(object):
+    def __init__(self,pc):
+        self.pc = pc
+        self.dynamic_pcs = {}
+
+        self.equiv_classes = {}
+
+    def __repr__(self):
+        return 'store store info at pc %s' % (self.pc)
+
+    def add_inst_num(self,inst_num,addr):
+        '''
+        adds a dynamic PC to the static instruction.
+        Args: inst_num - instruction number (in ticks)
+              addr - target address of store
+        '''
+        self.dynamic_pcs[inst_num] = st_inst(self.pc, inst_num, addr)
+
+    def create_equiv_class(self):
+        '''
+        creates the equivalence classes once all loads and stores have been
+        recorded successfully.
+        '''
+        for inst_num in self.dynamic_pcs:
+            dynamic_pc = self.dynamic_pcs[inst_num]
+            # loads can be used as a key to quickly lookup if the pattern
+            # has been seen before
+            load_pattern = ','.join(dynamic_pc.loads)
+            if load_pattern not in self.equiv_classes:
+                self.equiv_classes[load_pattern] = equiv_class(self.pc)
+            self.equiv_classes[load_pattern].add_member(inst_num)
+            
+    def print_equiv_classes(self):
+        '''
+        outputs all equivalence classes for this static PC.
+        Returns: output - information fo equivalence class
+        '''
+        output = ''
+        for equiv_class in self.equiv_classes:
+            self.equiv_classes[equiv_class].select_pilot()
+            output += '%s\n' % \
+                       self.equiv_classes[equiv_class].print_equiv_class()
+        return output
 
 class st_inst(object):
-    def __init__(self,pc,addr,tick):
+    def __init__(self,pc,inst_num,addr):
         self.pc = pc
+        self.inst_num = inst_num
         self.addr = addr
-        self.tick = tick
         self.loads = []
+
     def __repr__(self):
-        return "store addr of pc %s: %s" % (self.pc, self.addr)
+        return 'dynamic store pc: %s addr: %s inst_num: %s' % \
+                (self.pc, self.addr, self.inst_num)
+        
     def add_load(self,load_pc):
         self.loads.append(load_pc)
 
-# get information of the program counter
-
-if len(sys.argv) != 2:
-    print("Usage: python store_equivalence.py [app_name]")
-    exit()
-
-app_name = sys.argv[1]
-
-
-pc_fname = app_name + "_parsed.txt"
-mem_fname = app_name + "_clean_dump_parsed_merged.txt"
-
-
-
-pc_fname_list = open(pc_fname).read().splitlines()
-pc_control_map = {}
-for line in pc_fname_list[1:]: # first line in file is a header
-    temp = line.split()
-    pc = temp[0]
-    ctrl_flag = temp[2]
-    pc_control_map[pc] = ctrl_flag == "True"
-
-
-del pc_fname_list
-
-
-
-
-# get information about the time clocks
-ins_file_list = open(mem_fname).read().splitlines()
-
-trace_list = [x.strip().split() for x in ins_file_list] 
-
-del ins_file_list
-
-print('Number of ticks', len(trace_list))
-print('Number of PCs', len(pc_control_map))
-
-
-
-
-# find basic blocks
-ctrl_inst_index = [i for i in range(len(trace_list)) if pc_control_map[trace_list[i][1][2:]]] # index for control instructions
-
-basicblocks = set() # set of basic block ids 2-length tuple with first element as start PC and second as end PC
-program_bb = [] # program represented as basic blocks with tick value at start of basic block
-bb_map = {} # map bbs to id
-tick_starts = set() # used to check start of new bb
-
-def add_bb(bb_start, bb_end, tick):
-    global basicblocks
-    global program_bb
-    global bb_map
-    global tick_starts
-    
-    tick_starts.add(tick)
-    bb_id = (bb_start,bb_end)
-    if bb_id not in basicblocks:
-        basicblocks.add(bb_id)
-        bb_map[bb_id] = []
-    bb = basic_block(bb_id,tick)
-    program_bb.append(bb)
-    bb_map[bb_id].append(bb)
     
 
-for index in range(len(ctrl_inst_index)-1):
-    # check if there are PCs between two control instructions
-    if index == 0:
-        ctrl_start = ctrl_inst_index[0]
-        if ctrl_start > 1: # create first bb from the beginning tick
-            bb_start = trace_list[0][1][2:]
-            bb_end = trace_list[ctrl_start-1][1][2:]
-            tick = int(trace_list[0][0])
-            add_bb(bb_start, bb_end, tick)
-            
-    if ctrl_inst_index[index+1] - ctrl_inst_index[index] >= 2:
-        bb_start = trace_list[ctrl_inst_index[index] + 1][1][2:]
-        bb_end = trace_list[ctrl_inst_index[index+1] - 1][1][2:]
-        tick = int(trace_list[ctrl_inst_index[index] + 1][0])
-        add_bb(bb_start, bb_end, tick)
+class depending_instructions(object):
+    def __init__(self):
+        '''
+        initializes a map of instructions where the key is the static PC,
+        and the value is the PC of the store that depends on it
+        '''
+        self.dep_inst_map = {}
 
-# instructions after the last control block are to be included; the last instruction probably is a control instruction though.        
-print("Basic blocks created.")
+    def add_dep_inst(self,dep_inst_pc,st_inst_pc):
+        '''
+        updates the dependent store instruction
+        Args: dep_inst_pc - PC of instruction that store depends on
+              st_inst_pc - PC of dependent store
+        '''
+        if dep_inst_pc not in self.dep_inst_map:
+            self.dep_inst_map[dep_inst_pc] = None
+        self.dep_inst_map[dep_inst_pc] = st_inst_pc
 
-bb_index = -1
-st_index = 0
-for item in trace_list:
-    tick = int(item[0])
-    addr = item[-1]
-    pc = item[1][2:]
-    if not pc_control_map[pc]:
-        if tick in tick_starts:
-            bb_index += 1
-            st_index = 0
-        if len(item) == 4:  # ld/st instruction
-            if item[-2] == "Write":
-                curr_st = st_inst(pc,addr,tick)
-                program_bb[bb_index].store_insts.append(curr_st)
-                if addr not in program_bb[bb_index].store_addr_map:
-                    program_bb[bb_index].store_addr_map[addr] = []
-                program_bb[bb_index].store_addr_map[addr].append(
-                    st_index)
-                st_index += 1
-            elif item[-2] == "Read":
-                if addr in program_bb[bb_index].store_addr_map:
-                    last_store = program_bb[bb_index].store_addr_map[
-                        addr][-1]  # captures last store if addr matches
-                    program_bb[bb_index].store_insts[last_store].add_load(
-                        pc)
+    def print_dep_insts(self):
+        '''
+        prints out the depending instructions for the appropriate stores
+        Returns: output - string format for each instruction
+        '''
+        output = ''
+        dep_pcs = sorted(self.dep_inst_map.keys())
+        output += 'dep_pc store_pc\n'
+        for dep_pc in dep_pcs:
+            output += '%s %s\n' % (dep_pc, self.dep_inst_map[dep_pc])
+        return output
+        
+        
 
+class store_equivalence(object):
+    def __init__(self, app_name, app_prefix):
+        self.app_name = app_name
 
-print("Loads and stores populated")
+        inst_db_file = app_prefix + '_parsed.txt'
+        mem_filename = app_prefix + '_clean_dump_parsed_merged.txt'
+        
+        # get instruction database of application
+        inst_db = open(inst_db_file).read().splitlines()
+        
+        # first field is ignored since it contains only headers
+        self.insts = [instruction(None,None,i) for i in inst_db[1:]]
+        
+        self.insts_map = {inst.pc:inst for inst in self.insts}
+        
+        # get trace data to build basic blocks and store equiv classes
+        self.exec_trace = trace(mem_filename) 
 
-random.seed(seed_val)
-total_classes = 0
-total_ticks = 0
-output_file = "%s_store_equivalence.txt" % app_name
+        # used to check alias of register when creating dependency chains
+        self.x86_regs = x86_register()
 
-output = open(output_file, "w")
-output.write("pc:population:pilot:members\n")
-for bb_id in basicblocks:
-    for j in range(len(bb_map[bb_id][0].store_insts)):
-        store_equiv_map = {}
-        empty_load_map = {}  # stores with no subsequent loads
-        for i in range(len(bb_map[bb_id])):
-            curr_st_inst = bb_map[bb_id][i].store_insts[j]
-            ld_pc_pattern = "".join(curr_st_inst.loads)
-            if ld_pc_pattern != "":
-                if ld_pc_pattern not in store_equiv_map:
-                    store_equiv_map[ld_pc_pattern] = [
-                        curr_st_inst.pc]  # pattern starts with pc
-                store_equiv_map[ld_pc_pattern].append(curr_st_inst.tick)
+        self.basic_blocks_map = {}
+        self.st_inst_pcs = set()
+        self.ld_inst_pcs = set()
+
+        self.dep_insts = depending_instructions()
+
+        self.static_st_inst_map = {}
+        self.addr_map = {}  # holds info on latest store accessing an address
+
+    def _add_ld_or_st_pc(self, item, curr_bb):
+        '''
+        TODO: fill signature
+        '''
+        pc = item.pc
+        if item.mem_op is not None:
+            if item.mem_op == 'Read':
+                self.ld_inst_pcs.add(pc)
+            elif item.mem_op == 'Write':
+                self.st_inst_pcs.add(pc)
+                curr_bb.st_insts.append(self.insts_map[pc])
+                curr_bb.st_inst_idx.append(curr_bb.size)
+        
+
+    def build_basic_blocks(self):
+        '''
+        uses the execution trace to build basic blocks. The basic blocks
+        are used to find the instructions that each store instruction
+        depends on.
+        '''
+        # very first instruction executed, start of bb
+        start = self.exec_trace[0].pc
+        curr_bb = basic_block(start)
+        create_new_bb = False 
+        # iterate through the trace, create store chains and bbs in the process
+        for item in self.exec_trace:
+            pc = item.pc
+            # check if pc is control inst, end bb
+            if self.insts_map[pc].ctrl_flag: 
+                if not create_new_bb:
+                    if curr_bb.bb_id not in self.basic_blocks_map:
+                        self.basic_blocks_map[curr_bb.bb_id] = curr_bb
+                    create_new_bb = True
+            if create_new_bb:
+                # first inst of bb should not be control
+                if not self.insts_map[pc].ctrl_flag:
+                    start = pc
+                    curr_bb = basic_block(start)
+                    create_new_bb = False
+                    curr_bb.insts.append(self.insts_map[pc])
+                    self._add_ld_or_st_pc(item, curr_bb)
+                    curr_bb.size += 1
             else:
-                pc = curr_st_inst.pc
-                if pc  not in empty_load_map:
-                    empty_load_map[pc] = []
-                empty_load_map[pc].append(curr_st_inst.tick)
-        for ld_pc_pattern in store_equiv_map:
-            store_equiclass = "%s:" % store_equiv_map[ld_pc_pattern][0]
-            store_equiclass += "%d:" % (len(store_equiv_map[
-                ld_pc_pattern])-1)
-            # pick a random pilot
-            rand_tick_idx = random.randint(1,
-                len(store_equiv_map[ld_pc_pattern])-1)
-            rand_tick = store_equiv_map[ld_pc_pattern][
-                rand_tick_idx]
-            store_equiclass += "%s:" % rand_tick
-            for i in range(1,
-                    len(store_equiv_map[ld_pc_pattern])):
-                tick = store_equiv_map[ld_pc_pattern][i]
-                store_equiclass += " %s" % tick
-                total_ticks += 1
-            total_classes += 1
-            output.write("%s\n" % store_equiclass)
-        for pc in empty_load_map:
-            store_equiclass = "%s:" % pc
-            num_dynamic_insts = len(empty_load_map[pc])
-            store_equiclass += "%d:" % num_dynamic_insts
-            rand_tick_idx = random.randint(0,num_dynamic_insts-1)
-            rand_tick = empty_load_map[pc][rand_tick_idx]
-            store_equiclass += "%s:" % rand_tick
-            for i in range(num_dynamic_insts):
-                tick = empty_load_map[pc][i]
-                store_equiclass += " %s" % tick
-                total_ticks += 1
-            total_classes += 1
-            output.write("%s\n" % store_equiclass)
-output.close()
+                curr_bb.insts.append(self.insts_map[pc])
+                self._add_ld_or_st_pc(item, curr_bb)
+                curr_bb.size += 1
+        # make a final basic block after iterating
+        if curr_bb.bb_id not in self.basic_blocks_map:
+            self.basic_blocks_map[curr_bb.bb_id] = curr_bb
 
-print("Total classes: %d" % total_classes)
-print("Total ticks in file: %d" % total_ticks)
+    def _add_src_regs(self, pc):
+        '''
+        adds to the list of currently active source registers when computing
+        store dependence chains.
+        Args: pc - PC of the current instruction to get registers from
+        Returns: list of registers that belong to the requested instruction
+        '''
+        temp_regs = self.insts_map[pc].src_regs+self.insts_map[pc].mem_src_regs
+        while None in temp_regs:
+            temp_regs.remove(None)
+        return temp_regs
+
+    def find_depending_instructions(self):
+        '''
+        finds the depending instructions of every store, given the basic blocks
+        of an application.
+        '''
+        for bb_id in self.basic_blocks_map:
+            bb = self.basic_blocks_map[bb_id]
+            # iterate through stores and bb in reverse
+            for i in range(len(bb.st_insts)-1,-1,-1):
+                curr_regs = []
+                curr_st = bb.st_insts[i]
+                curr_st_idx = bb.st_inst_idx[i]
+                pc = curr_st.pc
+                curr_regs += self._add_src_regs(pc)
+                inst_idx = curr_st_idx - 1
+                # make sure that we stop at the basic block
+                # or when all regs are used
+                while inst_idx > 0 and len(curr_regs) > 0:
+                    curr_inst = bb.insts[inst_idx]
+                    pc = curr_inst.pc
+                    if pc not in self.ld_inst_pcs and \
+                            pc not in self.st_inst_pcs:
+                        dest_reg = curr_inst.dest_reg
+                        if dest_reg is not None:
+                            for reg in curr_regs:
+                                # we found a def of one of the registers
+                                if self.x86_regs.is_alias(dest_reg, reg):
+                                    curr_regs.remove(reg)
+                                    curr_regs += self._add_src_regs(pc)
+                                    self.dep_insts.add_dep_inst(pc, curr_st.pc)
+                                    break
+                    inst_idx -= 1
+
+    def print_depending_instructions(self,out_filename):
+        '''
+        prints out the depending instructions.
+        Args: out_filename - name of file to output
+        '''
+        output = open(out_filename, 'w')
+        output_lines = self.dep_insts.print_dep_insts()
+        output.write(output_lines)
+        output.close()
+
+    def create_store_equiv_classes(self):
+        '''
+        creates store equivalence classes by tracking loads and stores
+        as well as their addresses.
+        '''
+        # simplify trace so that only loads and stores are checked
+        simple_trace = self.exec_trace.simplify_trace()
+        for item in simple_trace:
+            inst_num = item.inst_num
+            pc = item.pc
+            mem_op = item.mem_op
+            addr = item.mem_addr
+            if mem_op == 'Read':
+                if addr in self.addr_map:
+                    # there exists a store that the load is reading from
+                    self.addr_map[addr].add_load(pc)
+            elif mem_op == 'Write' and not self.insts_map[pc].ctrl_flag:
+                if pc not in self.static_st_inst_map:
+                    self.static_st_inst_map[pc] = static_st_inst(pc)
+                self.static_st_inst_map[pc].add_inst_num(inst_num,addr)
+                dynamic_pc = self.static_st_inst_map[pc].dynamic_pcs[inst_num]
+                # record the address of the store to check subsequent loads
+                self.addr_map[addr] = dynamic_pc
+        for static_pc in self.static_st_inst_map:
+            self.static_st_inst_map[static_pc].create_equiv_class()
+                
+    def print_store_equiv_classes(self, out_filename):
+        '''
+        prints the store equivalence classes to a file.
+        Args: out_filename - name of file to output
+        '''
+        outfile = open(out_filename, 'w')
+        output = 'pc:population:pilot:members\n'
+        for pc in self.static_st_inst_map:
+            output += self.static_st_inst_map[pc].print_equiv_classes()
+        outfile.write(output)
+        outfile.close()
+
+if __name__ == '__main__':
+    if len(sys.argv) != 3:
+        print('Usage: python store_equivalence.py [app_name] [isa]')
+        exit()
+
+    app_name = sys.argv[1]
+    isa = sys.argv[2]
+
+    approx_dir = os.environ.get('APPROXGEM5')
+    apps_dir = approx_dir + '/workloads/' + isa + '/apps/' + app_name
+    app_prefix = apps_dir + '/' + app_name
+
+    store_equiv = store_equivalence(app_name, app_prefix)
+    store_equiv.build_basic_blocks()
+    store_equiv.find_depending_instructions()
+    
+    out_filename = app_prefix + '_dependent_stores.txt'
+    store_equiv.print_depending_instructions(out_filename)
+    
+    out_filename = app_prefix + '_store_equivalence.txt'
+    store_equiv.create_store_equiv_classes()
+    store_equiv.print_store_equiv_classes(out_filename)

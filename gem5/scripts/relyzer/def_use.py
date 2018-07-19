@@ -1,5 +1,10 @@
 #!/usr/bin/python
 
+# This script generates def-use pairs.
+
+import os
+import sys
+
 from inst_database import inst_database
 from inst_database import instruction
 from register import x86_register
@@ -77,22 +82,34 @@ class def_use_pc_database(object):
         self.pc_def_map = pc_def_map
 
     def print_db(self,output_filename):
-        output = open(output_filename, "w")
-        output.write("pc reg 0-8 8-16 16-32 32-64\n")
+        '''
+        prints the def_use database. 
+        Args: output_filename - desired filename for database
+        '''
+        output = open(output_filename, 'w')
+        output.write('pc reg 0-8 8-16 16-32 32-64\n')
         for pc in self.pc_list:
             if pc in self.pc_def_map:
                 output.write('%s\n' % self.pc_def_map[pc])
         output.close()
 
-if __name__ == '__main__':
-    import sys
+    def __getitem__(self, pc):
+        return self.pc_def_map[pc]
 
-    if len(sys.argv) != 2:
-        print("Test Usage: python def_use.py [app]")
+if __name__ == '__main__':
+    if len(sys.argv) != 3:
+        print('Usage: python def_use.py [app_name] [isa]')
         exit()
 
     app_name = sys.argv[1]
-    inst_db_filename = app_name + "_parsed.txt"
+    isa = sys.argv[2]
+
+    approx_dir = os.environ.get('APPROXGEM5')
+    apps_dir = approx_dir + '/workloads/' + isa + '/apps/' + app_name
+    app_prefix = apps_dir + '/' + app_name
+
+    inst_db_filename = app_prefix + '_parsed.txt'
     def_use_db = def_use_pc_database(app_name,inst_db_filename)
-    output_file = "%s_def_use.txt" % app_name
+    output_file = app_prefix + '_def_use.txt'
     def_use_db.print_db(output_file)
+

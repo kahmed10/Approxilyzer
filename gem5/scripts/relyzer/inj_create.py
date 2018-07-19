@@ -1,7 +1,9 @@
 #!/usr/bin/python
 
-# gets register info and outputs final injection list
+# This script uses the pruning database with the register info 
+# and outputs final injection list.
 
+import os
 import sys
 import random
 
@@ -60,7 +62,10 @@ for i in float_reg_info_64:
 
 def_use_count_map = {}
 addr_bound_count_map = {}
+pc_pilot_map = {}
 
+ctrl_equiv_inj = 0
+store_equiv_inj = 0
 
 # TODO: cleanup within script, used externally for postprocessing
 class x86_inj_functions(object):
@@ -125,14 +130,21 @@ def create_inj(pc, isa, pilot, reg, max_bits, mem_bound=64):
     '''
     used for source registers only (0 passed in to src_dest)
     '''
+    global addr_bound_count_map
+
     reg_max_bits = reg_bits_map[reg]
     reg_type = reg_int_float_map[reg]
     max_iter_bits = min(reg_max_bits, max_bits, mem_bound)
+    if pc not in addr_bound_count_map:
+        addr_bound_count_map[pc] = {}
+    if pilot not in addr_bound_count_map[pc]:
+        addr_bound_count_map[pc][pilot] = 0
+    if mem_bound < reg_max_bits and mem_bound < max_bits:
+        addr_bound_count_map[pc][pilot] += min(reg_max_bits,max_bits) - mem_bound
+        
 
-    global addr_bound_count_map
     injs = []
 
-    addr_bound_count_map[pc] = (reg_max_bits - max_iter_bits)
     for bit in range(max_iter_bits):
         injs.append(print_inj(isa, pilot, bit, reg, reg_type, 0))
     return injs
@@ -151,25 +163,31 @@ def create_def_inj(isa, pilot, pc, def_pc, max_bits):
         if bit_width[1] == pc:
             for bit in range(reg_max_bits):
                 injs.append(print_inj(isa, pilot, bit, reg, reg_type, 1))
+        elif bit_width[1] != 'None':
             def_use_count += 8
     else:
         # go through the bit widths and only inject if there was no first use
         if bit_width[0] == pc:
             for bit in range(8):
                 injs.append(print_inj(isa, pilot, bit, reg, reg_type, 1))
+        elif bit_width[0] != 'None':
             def_use_count += 8
         if bit_width[1] == pc:
             for bit in range(8,16):
                 injs.append(print_inj(isa, pilot, bit, reg, reg_type, 1))
+        elif bit_width[1] != 'None':
             def_use_count += 8
         if bit_width[2] == pc:
             for bit in range(16,32):
                 injs.append(print_inj(isa, pilot, bit, reg, reg_type, 1))
-            def_use_count += 8
+        elif bit_width[2] != 'None':
+            def_use_count += 16
         if bit_width[3] == pc:
             for bit in range(32,min(max_bits,64)):
                 injs.append(print_inj(isa, pilot, bit, reg, reg_type, 1))
-            def_use_count += 8
+        elif bit_width[3] != 'None':
+            if max_bits > 32:
+                def_use_count += 32
     def_use_count_map[pc] = def_use_count
     return injs
 
@@ -180,21 +198,23 @@ def add_regs(regs_list, regs):
         else:  # dest reg is currently just a string
             regs_list.append(regs)
 
-def collect_stats(app_name, pruning_db, total_inj):
+def collect_stats(app_name, app_prefix, pruning_db, total_inj):
     global def_use_count_map
     global addr_bound_count_map
+    global pc_pilot_map
+    global ctrl_equiv_inj
+    global store_equiv_inj
     total_err_sites = 0
     def_use_total = 0
     addr_bound_total = 0
-    store_equiv_inj = 0
     store_equiv_total = 0
-    ctrl_equiv_inj = 0
     ctrl_equiv_total = 0
 
-    store_equiv_db = equiv_class_database(app_name + '_store_equivalence.txt')
-    ctrl_equiv_db = equiv_class_database(app_name + '_control_equivalence.txt') 
+    store_equiv_db = equiv_class_database(app_prefix + '_store_equivalence.txt')
+    ctrl_equiv_db = equiv_class_database(app_prefix + '_control_equivalence.txt') 
     for pc_obj in pruning_db:
         pc = pc_obj.pc
+        max_bits = pc_obj.max_bits
         ctrl_or_store = pc_obj.ctrl_or_store
         pilot = pc_obj.pilot
         inj_per_pc = 0
@@ -204,7 +224,7 @@ def collect_stats(app_name, pruning_db, total_inj):
         add_regs(regs, pc_obj.mem_src_regs)
         add_regs(regs, pc_obj.dest_reg)
         for reg in regs:
-            inj_per_pc += reg_bits_map[reg]
+            inj_per_pc += min(reg_bits_map[reg], max_bits)
         if ctrl_or_store == 'store':
             if pilot in store_equiv_db:
                 pop = store_equiv_db.get_pop(pilot)
@@ -215,22 +235,19 @@ def collect_stats(app_name, pruning_db, total_inj):
             pop = ctrl_equiv_db.get_pop(pilot)
         total_err_sites += pop * inj_per_pc
         def_use_total += pop * def_use_count_map.get(pc,0)
-        addr_bound_total += pop * addr_bound_count_map.get(pc,0)
+        if pc in addr_bound_count_map:
+            addr_bound_total += pop * addr_bound_count_map[pc].get(pilot,0)
         if ctrl_or_store == 'store':
-            store_inj_per_pc = inj_per_pc - def_use_count_map.get(pc,0) - \
-                               addr_bound_count_map.get(pc,0)
-            assert(store_inj_per_pc >= 0),'err store_equiv'
-            store_equiv_inj += store_inj_per_pc
+            store_inj_per_pc = pc_pilot_map[pc][pilot]
             store_equiv_total += pop * store_inj_per_pc
         else:
-            ctrl_inj_per_pc = inj_per_pc - def_use_count_map.get(pc,0) - \
-                              addr_bound_count_map.get(pc,0)
-            assert(ctrl_inj_per_pc >= 0),'err ctrl_equiv'
-            ctrl_equiv_inj += ctrl_inj_per_pc
+            ctrl_inj_per_pc = pc_pilot_map[pc][pilot]
             ctrl_equiv_total += pop * ctrl_inj_per_pc
             
-    out_filename = app_name + '_pruning_stats.txt'
+    out_filename = app_prefix + '_pruning_stats.txt'
+    out_filename2 = app_prefix + '_pruning_stats2.txt'
     outfile = open(out_filename, 'w')
+    outfile2 = open(out_filename2, 'w')
     total_pruned = float(total_err_sites - total_inj)
     total_pruned_pct = (1 - total_inj / float(total_err_sites)) * 100
     store_pruned = (store_equiv_total - store_equiv_inj) / total_pruned * 100
@@ -241,7 +258,11 @@ def collect_stats(app_name, pruning_db, total_inj):
             total_pruned_pct, store_pruned, ctrl_pruned, \
             def_use_pruned, addr_bound_pruned, \
             store_pruned+ctrl_pruned+def_use_pruned+addr_bound_pruned))
+    outfile2.write('%d %d %d %d\n' % ((ctrl_equiv_total-ctrl_equiv_inj),\
+            (store_equiv_total-store_equiv_inj), def_use_total, \
+            addr_bound_total))
     outfile.close()
+    outfile2.close()
                     
 if __name__ == '__main__':
     if len(sys.argv) < 3 or len(sys.argv) > 4:
@@ -251,11 +272,16 @@ if __name__ == '__main__':
     collect_stats_flag = False
     if len(sys.argv) == 4:
         collect_stats_flag = True
+
     app_name = sys.argv[1]
     isa = sys.argv[2]
-    pruning_db_file = app_name + '_pruning_database.txt'
-    mem_bounds_file = app_name + '_mem_bounds.txt'
 
+    approx_dir = os.environ.get('APPROXGEM5')
+    apps_dir = approx_dir + '/workloads/' + isa + '/apps/' + app_name
+    app_prefix = apps_dir + '/' + app_name
+
+    pruning_db_file = app_prefix + '_pruning_database.txt'
+    mem_bounds_file = app_prefix + '_mem_bounds.txt'
 
     pruning_db = [pc_info(None,None,None,in_string=i) for i in open(
         pruning_db_file).read().splitlines()[1:]]
@@ -266,6 +292,9 @@ if __name__ == '__main__':
     output = []
     for item in pruning_db:
         pc = item.pc
+        if pc not in pc_pilot_map:
+            pc_pilot_map[pc] = {}
+        ctrl_or_store = item.ctrl_or_store
         def_pc = item.def_pc
         do_inject = item.do_inject
         src_regs = item.src_regs
@@ -273,22 +302,47 @@ if __name__ == '__main__':
         dest_reg = item.dest_reg
         is_mem = item.is_mem
         pilot = item.pilot
+        pc_pilot_map[pc][pilot] = 0
         max_bits = item.max_bits
         if do_inject:
             if src_regs is not None:
                 for src_reg in src_regs:
-                    output += create_inj(pc, isa, pilot, src_reg, max_bits)
+                    temp = create_inj(pc, isa, pilot, src_reg, max_bits)
+                    inj_count = len(temp)
+                    pc_pilot_map[pc][pilot] += inj_count
+                    if ctrl_or_store == 'ctrl':
+                        ctrl_equiv_inj += inj_count
+                    else:
+                        store_equiv_inj += inj_count
+                    output += temp#create_inj(pc, isa, pilot, src_reg, max_bits)
                     
             if mem_src_regs is not None:
                 for mem_src_reg in mem_src_regs:
-                    output += create_inj(pc, isa, pilot, mem_src_reg, \
+                    temp = create_inj(pc, isa, pilot, mem_src_reg, \
                                          max_bits, mem_bound)
+                    inj_count = len(temp)
+                    pc_pilot_map[pc][pilot] += inj_count
+                    if ctrl_or_store == 'ctrl':
+                        ctrl_equiv_inj += inj_count
+                    else:
+                        store_equiv_inj += inj_count
+                    output += temp#create_inj(pc, isa, pilot, mem_src_reg, \
+                               #          max_bits, mem_bound)
                         
             # check destination register (pruning info found in def_pc)
             if def_pc is not None:
-                output += create_def_inj(isa, pilot, pc, def_pc, max_bits)
-    # for inj in output:
-    #     print(inj) 
+                temp = create_def_inj(isa, pilot, pc, def_pc, max_bits)
+                inj_count = len(temp)
+                pc_pilot_map[pc][pilot] += inj_count
+                if ctrl_or_store == 'ctrl':
+                    ctrl_equiv_inj += inj_count
+                else:
+                    store_equiv_inj += inj_count
+                output += temp #create_def_inj(isa, pilot, pc, def_pc, max_bits)
+    with open(app_prefix + '_inj_list.txt','w') as f:
+        for inj in output:
+            f.write('%s\n' % inj)
     total_inj = len(output)
     if collect_stats_flag:
-        collect_stats(app_name, pruning_db, total_inj) 
+        collect_stats(app_name, app_prefix, pruning_db, total_inj) 
+

@@ -1,4 +1,8 @@
 #!/usr/bin/python
+
+# This script build control equivalence classes.
+
+import os
 import random
 import sys
 
@@ -7,15 +11,19 @@ seed_val = 1  # seed to ensure consistency when selecting pilots
 
 # get information of the program counter
 
-if len(sys.argv) != 2:
-    print("Usage: python control_equivalence.py [app_name]")
+if len(sys.argv) != 3:
+    print('Usage: python control_equivalence.py [app_name] [isa]')
     exit()
 
 app_name = sys.argv[1]
+isa = sys.argv[2]
 
+approx_dir = os.environ.get('APPROXGEM5')
+apps_dir = approx_dir + '/workloads/' + isa + '/apps/' + app_name
+app_prefix = apps_dir + '/' + app_name
 
-pc_fname = app_name + "_parsed.txt"
-ins_fname = app_name + "_clean_dump_parsed_merged.txt"
+pc_fname = app_prefix + '_parsed.txt'
+ins_fname = app_prefix + '_clean_dump_parsed_merged.txt'
 
 
 
@@ -70,8 +78,11 @@ tick_pc_list = ins_content  #[item for item in ins_content if item[1][2:] in pc_
 # find basic blocks
 conins_index = [i for i in range(0,len(tick_pc_list)) if pc_control_map[tick_pc_list[i][1][2:]][0] == 1] # index for control instructions
 
-basicblocks = [] # list of basic blocks. Each list element is a 2-length list with first element as start PC and second as end PC
-program_bb = [] # program represented as basic blocks with tick value at start of basic block
+# list of basic blocks. Each list element is a 2-length list with
+# first element as start PC and second as end PC
+basicblocks = []
+# program represented as basic blocks with tick value at start of basic block
+program_bb = [] 
 
 
 for cind in range(0,len(conins_index)-1):
@@ -98,7 +109,8 @@ for cind in range(0,len(conins_index)-1):
 
 # instructions after the last control block are to be included; the last instruction probably is a control instruction though.        
 print('Basic blocks created.')
-#print(len(tick_pc_list), conins_index[-1])
+print('Program length in bbs:', len(program_bb))
+print('Number of basic blocks:', len(basicblocks))
 
 
 
@@ -110,6 +122,7 @@ equiclass_map = {}   # list of equivalence classes
 equiclass_index_map = {} # stores indices for members of equivalence class
 equiclass_ticks_map = {}  # start times corresponding to each equivalence class instance
 equiclass_bb_count = {}
+bb_id_depth = {}
 
 def create_equiclass(bbseq, tick_val, index, bb_id):
     global equiclass_map
@@ -145,9 +158,10 @@ def create_equiclass(bbseq, tick_val, index, bb_id):
 
 for main_index in range(0,len(program_bb)-equiclass_depth+1):
     index = main_index # distinguishing main_index from index for clarity
-    bbseq = [item[1] for item in program_bb[index:index+equiclass_depth]]
-    tick_val = program_bb[index][0]
     bb_id = program_bb[index][1]
+    curr_depth = bb_id_depth.get(bb_id, equiclass_depth)
+    bbseq = [item[1] for item in program_bb[index:index+curr_depth]]
+    tick_val = program_bb[index][0]
     create_equiclass(bbseq, tick_val, index, bb_id)
     
     
@@ -158,7 +172,7 @@ for main_index in range(0,len(program_bb)-equiclass_depth+1):
              for index in equiclass_index_map[bb_id][equiv_id]:
                 total_indices.append(index)
 
-        new_depth = equiclass_depth - 1
+        new_depth = curr_depth - 1
         while len(equiclass_bb_count[bb_id]) > equiclass_cap:
             # reset data structures associated with bb_id
             equiclass_map[bb_id] = {}
@@ -167,22 +181,26 @@ for main_index in range(0,len(program_bb)-equiclass_depth+1):
             equiclass_bb_count[bb_id] = set()
             
             for index in total_indices:
-                 
-                bbseq = [item[1] for item in program_bb[index:index+new_depth]]
+                bbseq = [item[1] for item in program_bb[
+                         index:index+new_depth]]
                 tick_val = program_bb[index][0]
                 
                 create_equiclass(bbseq, tick_val, index, bb_id)
                 
             new_depth -= 1
-#    print("Finished iteration: %d" % index)    
+        curr_depth = new_depth
+    bb_id_depth[bb_id] = curr_depth
+    #print('Finished iteration: %d' % index)    
 
 # edge case towards the end of the array
 for main_index in range(len(program_bb)-equiclass_depth,len(program_bb)):
-    end_depth = len(program_bb)-(len(program_bb)-equiclass_depth)
     index = main_index # distinguishing main_index from index for clarity
+    bb_id = program_bb[index][1]
+    curr_depth = bb_id_depth.get(bb_id, equiclass_depth)
+    end_depth = min(curr_depth,len(program_bb)-(len(
+                program_bb)-equiclass_depth))
     bbseq = [item[1] for item in program_bb[index:index+end_depth]]
     tick_val = program_bb[index][0]
-    bb_id = program_bb[index][1]
 
     create_equiclass(bbseq, tick_val, index, bb_id)
     
@@ -194,7 +212,7 @@ for main_index in range(len(program_bb)-equiclass_depth,len(program_bb)):
              for index in equiclass_index_map[bb_id][equiv_id]:
                 total_indices.append(index)
 
-        new_depth = end_depth - 1
+        new_depth = curr_depth - 1
         while len(equiclass_bb_count[bb_id]) > equiclass_cap:
             # reset data structures associated with bb_id
             equiclass_map[bb_id] = {}
@@ -203,17 +221,22 @@ for main_index in range(len(program_bb)-equiclass_depth,len(program_bb)):
             equiclass_bb_count[bb_id] = set()
             
             for index in total_indices:
-                 
-                bbseq = [item[1] for item in program_bb[index:index+new_depth]]
+                if index == total_indices[-1]:
+                    bbseq = [item[1] for item in program_bb[
+                             index:index+end_depth]]
+                    
+                else: 
+                    bbseq = [item[1] for item in program_bb[
+                             index:index+new_depth]]
                 tick_val = program_bb[index][0]
                 create_equiclass(bbseq, tick_val, index, bb_id)
             new_depth -= 1
-#    print("Finished iteration: %d" % index)    
+        curr_depth = new_depth
+    bb_id_depth[bb_id] = curr_depth
+    # print('Finished iteration: %d' % index)    
         
 print('Equivalence classes created.')
 
-print('Program length in bbs:', len(program_bb))
-print('Number of basic blocks:', len(basicblocks))
 
 pc_equiclass_map = {}
 # pc -> equiclass_id: [ ticks belonging to that equiclass id ]
@@ -224,41 +247,41 @@ bb_idx = -1
 bb_id = None
 index = None
 for item in tick_pc_list:
-    if bb_idx < len(program_bb)-1:
-        tick = item[0]
-        pc = item[1][2:]
+    tick = item[0]
+    pc = item[1][2:]
+    if bb_idx < len(program_bb)-1:  # starting tick indicates new bb
         if int(tick) == program_bb[bb_idx+1][0]:
             bb_idx += 1
             bb_id = program_bb[bb_idx][1]
             index = program_bb[bb_idx][0]
-        if len(item) > 2:  # store inst check
-            if item[2] == "Write":
-                continue  # stores will be handled w/ store equiv
-        for equiv_id in equiclass_index_map[bb_id]:
-            if bb_idx in equiclass_index_map[bb_id][equiv_id]:
-                break
-        if pc not in pc_equiclass_map:
-            pc_equiclass_map[pc] = {}
-        if equiv_id not in pc_equiclass_map[pc]:
-            pc_equiclass_map[pc][equiv_id] = []
-        pc_equiclass_map[pc][equiv_id].append(tick)
+    if pc_control_map[pc][0] == 1:  # ignore control instructions
+        continue
+    if len(item) > 2:  # store inst check
+        if item[2] == 'Write':
+            continue  # stores will be handled w/ store equiv
+    for equiv_id in equiclass_index_map[bb_id]:
+        if bb_idx in equiclass_index_map[bb_id][equiv_id]:
+            break
+    if pc not in pc_equiclass_map:
+        pc_equiclass_map[pc] = {}
+    if equiv_id not in pc_equiclass_map[pc]:
+        pc_equiclass_map[pc][equiv_id] = []
+    pc_equiclass_map[pc][equiv_id].append(tick)
 
-output_file = "%s_control_equivalence.txt" % app_name
-output = open(output_file, "w")
-output.write("pc:population:pilot:members\n")
+output_file = app_prefix + '_control_equivalence.txt' 
+output = open(output_file, 'w')
+output.write('pc:population:pilot:members\n')
 pc_list = sorted(pc_equiclass_map.keys())
-random.seed(seed_val)
+random.seed(seed_val)  # randomly select a tick to be the pilot
 for pc in pc_list:
     for equiv_id in pc_equiclass_map[pc]:
-        ctrl_equiclass = "%s:" % pc
+        ctrl_equiclass = '%s:' % pc
         tick_list = pc_equiclass_map[pc][equiv_id]
-        ctrl_equiclass += "%d:" % len(tick_list)
+        ctrl_equiclass += '%d:' % len(tick_list)
         rand_tick_idx = random.randint(0,len(tick_list)-1)
         rand_tick = tick_list[rand_tick_idx]
-        ctrl_equiclass += "%s:" % rand_tick
-        for tick in tick_list:
-            ctrl_equiclass += " %s" % tick
-        output.write("%s\n" % ctrl_equiclass)
+        ctrl_equiclass += '%s:' % rand_tick
+        ctrl_equiclass += ' '.join(tick_list)
+        output.write('%s\n' % ctrl_equiclass)
 output.close()
-    
-
+ 

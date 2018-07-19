@@ -11,20 +11,25 @@ from pruning_database import pc_info
 from inj_create import x86_inj_functions
 from trace import trace
 
-if len(sys.argv) != 2:
-    print('Usage: python postprocessing.py [app]')
+if len(sys.argv) != 3:
+    print('Usage: python postprocessing.py [app_name] [isa]')
     exit()
 
 app_name = sys.argv[1]
+isa = sys.argv[2]
 
 approx_dir = os.environ.get('APPROXGEM5')
+apps_dir = approx_dir + '/workloads/' + isa + '/apps/' + app_name
+app_prefix = apps_dir + '/' + app_name
 
 raw_outcomes_path = approx_dir + '/gem5/outputs/x86/'
 
-raw_trace_file = app_name + '_clean_dump_parsed_merged.txt'
-pruning_db_file = app_name + '_pruning_database.txt'
+raw_trace_file = app_prefix + '_clean_dump_parsed_merged.txt'
+pruning_db_file = app_prefix + '_pruning_database.txt'
 raw_outcomes_file = raw_outcomes_path + app_name + '.outcomes_raw'
-mem_bounds_file = app_name + '_mem_bounds.txt'
+mem_bounds_file = app_prefix + '_mem_bounds.txt'
+
+dependent_stores_file = app_prefix + '_dependent_stores.txt'
 
 
 app_trace = trace(raw_trace_file)
@@ -39,9 +44,12 @@ pruning_db = [pc_info(None,None,None,in_string=i) for i in open(
 
 pilot_db_map = {i.pilot:i for i in pruning_db}
 
-ctrl_equiv_db = equiv_class_database(app_name + '_control_equivalence.txt')
-store_equiv_db = equiv_class_database(app_name + '_store_equivalence.txt')
+ctrl_equiv_db = equiv_class_database(app_prefix + '_control_equivalence.txt')
+store_equiv_db = equiv_class_database(app_prefix + '_store_equivalence.txt')
 x86_inj = x86_inj_functions()
+
+dependent_stores_info = {i.split()[0]:i.split()[1] for i in open(
+        dependent_stores_file).read().splitlines()[1:]}
 
 pilot_reg_bit_outcomes = {}
 
@@ -56,6 +64,22 @@ for item in raw_outcomes_list:
     pilot_reg_bit_outcomes[(pilot,reg,bit)] = (inj,outcome)
     pc = pilot_db_map[pilot].pc
     ctrl_or_store = pilot_db_map[pilot].ctrl_or_store
+    if ctrl_or_store == 'store':
+        # for non-store instructions
+        if pc in dependent_stores_info:
+            curr_pilot_idx = app_trace.get_idx(pilot)
+            store_pc = dependent_stores_info[pc]
+            i = curr_pilot_idx
+            for i in range(curr_pilot_idx,len(app_trace)):
+                if app_trace[i].pc == store_pc:
+                    ctrl_or_store += ',%s,%s' % (
+                            store_pc, app_trace[i].inst_num)
+                    break
+            else:
+                print('Error: no store found, check trace')
+                exit()
+            
+            
     output.append('%s,%s::%s::inj' % (pc, item, ctrl_or_store))
 
 for pilot in pilot_db_map:
@@ -95,5 +119,7 @@ for pilot in pilot_db_map:
                 output.append('%s,%s::%s::%s::pruned:%s,%s' % (
                         pc_obj.pc,injs[i],outcome,pc_obj.ctrl_or_store,
                         use_pc,use_inj))
-for i in output:
-    print(i)
+outfile = app_prefix + '_postprocess.txt'
+with open(outfile,'w') as f:
+    for i in output:
+        f.write('%s\n' % i)

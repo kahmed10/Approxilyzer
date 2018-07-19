@@ -2,6 +2,7 @@
 
 # this script parses the trace and gets only the cycle and PC
 # for x86, the ticks for the microinsts are also recorded
+
 import gzip
 import os
 import sys
@@ -37,7 +38,10 @@ inst_num_list = []
 inst_num_pc_map = {}
 inst_num_map = {}
 
-outfile = app_name + '_dump_parsed.txt'
+apps_dir = approx_dir + '/workloads/' + isa + '/apps/' + app_name
+if not os.path.exists(apps_dir):
+    os.makedirs(approx_dir)
+outfile = apps_dir + '/' + app_name + '_dump_parsed.txt'
 output = open(outfile, 'w')
 for line in dis_list:
     if 'system.cpu' in line:
@@ -91,7 +95,7 @@ if isa == 'x86':
                         inst_num_idx += 1
                         inst_num_map[inst_num_list[inst_num_idx]].append(tick)
 
-    outfile = app_name + '_dump_parsed_micro.txt'
+    outfile = apps_dir + '/' + app_name + '_dump_parsed_micro.txt'
     output = open(outfile, 'w')
     for inst_num in inst_num_list:
         output.write('%s:%s\n' % (inst_num,','.join(inst_num_map[inst_num])))

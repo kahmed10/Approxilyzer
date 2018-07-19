@@ -1,18 +1,28 @@
 #!/usr/bin/python
 
+# This script merges the isntruction and memory traces
+# in order to create a simplified trace.
+
+import os
 import sys
 
 if len(sys.argv) != 3:
-    print('Usage: python mem_dump_merge.py [app] [isa]')
+    print('Usage: python mem_dump_merge.py [app_name] [isa]')
     exit()
 
-app = sys.argv[1]
+app_name = sys.argv[1]
 isa = sys.argv[2]
 
-orig_dump = app + '_dump_parsed.txt'
-micro_dump = app + '_dump_parsed_micro.txt'
-mem_dump = app + '_mem_dump_parsed.txt'
-merged_dump = app + '_clean_dump_parsed_merged.txt'
+approx_dir = os.environ.get('APPROXGEM5')
+
+apps_dir = approx_dir + '/workloads/' + isa + '/apps/' + app_name
+if not os.path.exists(apps_dir):
+    os.makedirs(approx_dir)
+
+orig_dump = apps_dir + '/' + app_name + '_dump_parsed.txt'
+micro_dump = apps_dir + '/' + app_name + '_dump_parsed_micro.txt'
+mem_dump = apps_dir + '/' + app_name + '_mem_dump_parsed.txt'
+merged_dump = apps_dir + '/' + app_name + '_clean_dump_parsed_merged.txt'
 
 orig_list = open(orig_dump).read().splitlines()
 micro_tick_map = {}

@@ -34,6 +34,9 @@ for line in orig_list:
     temp = line.split()
     inst_num = temp[0]
     if isa == 'x86':
+        new_inst_num = micro_tick_map[inst_num][0]
+        temp[0] = new_inst_num
+        line = ' '.join(temp)
         for tick in micro_tick_map[inst_num]:
             if tick in mem_map:
                 r_w = mem_map[tick][0]

@@ -508,6 +508,43 @@ BaseSimpleCPU::preExecute()
     inst = gtoh(inst);
 
     TheISA::PCState pcState = thread->pcState();
+    if (!didInject && curTick() == injector->injTick && curTick() != 0)
+    {
+        if (injector->srcDest == 0)
+        {
+        injector->PerformFI(thread->getTC(), curTick(), injector->injTick,
+            injector->ISA, injector->injReg, injector->injBit, injector->regType);
+        didInject = true;
+        idx=0;
+        }
+        else
+        {
+            nextPC = pcState.nextInstAddr();
+            injNextPC = true;
+        }
+    }
+    else if (!didInject && injNextPC)
+    {
+        currPC = pcState.instAddr();
+        if (currPC == nextPC) {
+            injector->PerformFI(thread->getTC(), curTick(), injector->injTick,
+                injector->ISA, injector->injReg, injector->injBit, injector->regType);
+            didInject = true;
+        }
+    
+    }
+    else if (didInject)
+    {
+        if (curTick() - injector->injTick >= injector->timeoutVal) // exit on timeout
+        {
+            exitSimLoop("Detected:Timeout\n");
+        }
+        prevTick = curTick();
+        if (prevTick == 2363105503500)
+        {
+            DPRINTFN("%llu\n", prevTick);
+        }
+    }
 
     if (isRomMicroPC(pcState.microPC())) {
         t_info.stayAtPC = false;
@@ -554,37 +591,6 @@ BaseSimpleCPU::preExecute()
 
     //If we decoded an instruction this "tick", record information about it.
     if (curStaticInst) {
-        if (!didInject && curTick() == injector->injTick && curTick() != 0)
-        {
-            if (injector->srcDest == 0)
-            {
-            injector->PerformFI(thread->getTC(), curTick(), injector->injTick,
-                injector->ISA, injector->injReg, injector->injBit, injector->regType);
-            didInject = true;
-            idx=0;
-            }
-            else
-                nextTick = true;
-        }
-        else if (!didInject && nextTick)
-        {
-        injector->PerformFI(thread->getTC(), curTick(), injector->injTick,
-            injector->ISA, injector->injReg, injector->injBit, injector->regType);
-        didInject = true;
-        
-        }
-        else if (didInject)
-        {
-            if (curTick() - injector->injTick >= injector->timeoutVal) // exit on timeout
-            {
-                exitSimLoop("Detected:Timeout\n");
-            }
-            prevTick = curTick();
-            if (prevTick == 2363105503500)
-            {
-                DPRINTFN("%llu\n", prevTick);
-            }
-        }
 #if TRACING_ON
         string testTrace;
         traceData = tracer->getInstRecord(curTick(), thread->getTC(),

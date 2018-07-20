@@ -16,14 +16,18 @@ app_name = sys.argv[1]
 main_start = sys.argv[2]
 main_end = sys.argv[3]
 
-inst_db_file = app_name + '_parsed.txt'
+approx_dir = os.environ.get('APPROXGEM5')
+apps_dir = approx_dir + '/workloads/' + isa + '/apps/' + app_name
+app_prefix = apps_dir + '/' + app_name
+
+
+inst_db_file = app_prefix + '_parsed.txt'
 
 inst_db_list = open(inst_db_file).read().splitlines()[1:]
 app_pcs = set(['0x' + i.split()[0] for i in inst_db_list])
 
 isa = sys.argv[4]
 
-approx_dir = os.environ.get('APPROXGEM5')
 
 in_file_base = approx_dir + '/workloads/' + isa + '/checkpoint/' + \
                app_name + '/' + app_name

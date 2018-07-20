@@ -10,7 +10,7 @@ using namespace X86ISA;
 namespace FaultInjector
 {
 
-void FI::FlipBit(Tick _injTick, int injR, int injBit, int regType) // add bit position as parameter
+void FI::FlipBit(Tick _injTick, int injR, int injBit, int regType)
 {
     uint64_t currVal; // = thread->readIntReg(injR);
     uint64_t bitMask= 1 << injBit;
@@ -20,12 +20,12 @@ void FI::FlipBit(Tick _injTick, int injR, int injBit, int regType) // add bit po
         currVal = thread->readIntReg(injR); 
         thread->setIntReg(injR, currVal ^ bitMask); // flip bit using mask
     }
-    else if (regType == 1)
+    else if (regType == 1)  // floating point register
     {
         currVal = thread->readFloatRegBits(injR);
         thread->setFloatRegBits(injR, currVal ^ bitMask);
     }
-    else if (regType == 2)
+    else if (regType == 2)  // double precision register (SPARC)
     {
         bool upper = false;
         if (injBit >= 32) // flipping higher order bits
@@ -49,6 +49,7 @@ void FI::FlipBit(Tick _injTick, int injR, int injBit, int regType) // add bit po
 Injector::Injector(InjectorParams *params) : 
     SimObject(params),
     ISA(params->ISA),
+    injPC(params->injPC),
     injBit(params->injBit),
     injTick(params->injTick),
     injReg(params->injReg),

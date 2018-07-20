@@ -519,14 +519,15 @@ BaseSimpleCPU::preExecute()
         }
         else
         {
-            nextPC = pcState.nextInstAddr();
+            currPC = pcState.instAddr();
             injNextPC = true;
         }
     }
     else if (!didInject && injNextPC)
     {
-        currPC = pcState.instAddr();
-        if (currPC == nextPC) {
+        nextPC = pcState.instAddr(); 
+        if (nextPC != currPC) // check to see if we are on the next PC
+        {
             injector->PerformFI(thread->getTC(), curTick(), injector->injTick,
                 injector->ISA, injector->injReg, injector->injBit, injector->regType);
             didInject = true;

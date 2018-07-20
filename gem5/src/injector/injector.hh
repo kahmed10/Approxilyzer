@@ -487,6 +487,7 @@ class Injector : public SimObject
 {    
   public:
     std::string ISA;
+    std::string injPC;
     int injBit;
     Tick injTick;
     std::string injReg;

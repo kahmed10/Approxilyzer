@@ -7,6 +7,7 @@ class Injector(SimObject):
     cxx_header = 'injector/injector.hh'
 
     ISA = Param.String("", "target ISA to perform injection")
+    injPC = Param.String("", "target injection PC")
     injReg = Param.String("", "Register to inject into")
     injBit = Param.Int(0,"Bit position to flip")
     injTick = Param.Tick(0, "tick to inject fault")

@@ -2,13 +2,17 @@
 
 # This script combines many steps of pre-processing into one (in progress)
 
-if [ $# -ne 2 ]; then
-    echo "Usage : ./relyzer.sh [app_name] [isa]"
+if [ $# -lt 2 ] && [ $# -gt 3 ]; then
+    echo "Usage : ./relyzer.sh [app_name] [isa] (pop_coverage_size)"
     exit 1
 fi
 
 app_name=$1
 isa=$2
+pop_size=100
+if [ $# -eq 3 ]; then
+    pop_size=$3
+fi
 
 apps_dir=$APPROXGEM5/workloads/$isa/apps/$app_name
 curr_dir=$PWD
@@ -29,5 +33,5 @@ python bounding_address.py $app_name $isa
 
 python pruning_database.py $app_name $isa
 
-python inj_create.py $app_name $isa 1
+python inj_create.py $app_name $isa $pop_size
 

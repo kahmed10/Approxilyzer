@@ -266,15 +266,18 @@ def collect_stats(app_name, app_prefix, pruning_db, total_inj):
                     
 if __name__ == '__main__':
     if len(sys.argv) < 3 or len(sys.argv) > 4:
-        print('Usage: python inj_create.py [app] [isa] (collect_stats)')
+        print('Usage: python inj_create.py [app] [isa] (pop_coverage_size)')
         exit()
 
-    collect_stats_flag = False
-    if len(sys.argv) == 4:
-        collect_stats_flag = True
+    collect_stats_flag = False  # enable if getting pruning effectiveness
+#     if len(sys.argv) == 4:
+#         collect_stats_flag = True
 
     app_name = sys.argv[1]
     isa = sys.argv[2]
+    pop_size = 100
+    if len(sys.argv) == 4:
+       pop_size = int(sys.argv[3]) 
 
     approx_dir = os.environ.get('APPROXGEM5')
     apps_dir = approx_dir + '/workloads/' + isa + '/apps/' + app_name
@@ -290,6 +293,14 @@ if __name__ == '__main__':
     mem_bound = max(mem_bounds)
 
     output = []
+    store_equiv_db = equiv_class_database(app_prefix + '_store_equivalence.txt')
+    ctrl_equiv_db = equiv_class_database(app_prefix + '_control_equivalence.txt') 
+    pop_percent = float(pop_size)/100
+    top_store_equiv_ids = store_equiv_db.get_top_pops(pop_percent)
+    top_ctrl_equiv_ids = ctrl_equiv_db.get_top_pops(pop_percent)
+    top_equiv_ids = set(top_store_equiv_ids + top_ctrl_equiv_ids)
+
+ 
     for item in pruning_db:
         pc = item.pc
         if pc not in pc_pilot_map:
@@ -302,44 +313,45 @@ if __name__ == '__main__':
         dest_reg = item.dest_reg
         is_mem = item.is_mem
         pilot = item.pilot
-        pc_pilot_map[pc][pilot] = 0
-        max_bits = item.max_bits
-        if do_inject:
-            if src_regs is not None:
-                for src_reg in src_regs:
-                    temp = create_inj(pc, isa, pilot, src_reg, max_bits)
-                    inj_count = len(temp)
-                    pc_pilot_map[pc][pilot] += inj_count
-                    if ctrl_or_store == 'ctrl':
-                        ctrl_equiv_inj += inj_count
-                    else:
-                        store_equiv_inj += inj_count
-                    output += temp#create_inj(pc, isa, pilot, src_reg, max_bits)
-                    
-            if mem_src_regs is not None:
-                for mem_src_reg in mem_src_regs:
-                    temp = create_inj(pc, isa, pilot, mem_src_reg, \
-                                         max_bits, mem_bound)
-                    inj_count = len(temp)
-                    pc_pilot_map[pc][pilot] += inj_count
-                    if ctrl_or_store == 'ctrl':
-                        ctrl_equiv_inj += inj_count
-                    else:
-                        store_equiv_inj += inj_count
-                    output += temp#create_inj(pc, isa, pilot, mem_src_reg, \
-                               #          max_bits, mem_bound)
+        if pop_size == 100 or pilot in top_equiv_ids:
+            pc_pilot_map[pc][pilot] = 0
+            max_bits = item.max_bits
+            if do_inject:
+                if src_regs is not None:
+                    for src_reg in src_regs:
+                        temp = create_inj(pc, isa, pilot, src_reg, max_bits)
+                        inj_count = len(temp)
+                        pc_pilot_map[pc][pilot] += inj_count
+                        if ctrl_or_store == 'ctrl':
+                            ctrl_equiv_inj += inj_count
+                        else:
+                            store_equiv_inj += inj_count
+                        output += temp#create_inj(pc, isa, pilot, src_reg, max_bits)
                         
-            # check destination register (pruning info found in def_pc)
-            if def_pc is not None:
-                temp = create_def_inj(isa, pilot, pc, def_pc, max_bits)
-                inj_count = len(temp)
-                pc_pilot_map[pc][pilot] += inj_count
-                if ctrl_or_store == 'ctrl':
-                    ctrl_equiv_inj += inj_count
-                else:
-                    store_equiv_inj += inj_count
-                output += temp #create_def_inj(isa, pilot, pc, def_pc, max_bits)
-    with open(app_prefix + '_inj_list.txt','w') as f:
+                if mem_src_regs is not None:
+                    for mem_src_reg in mem_src_regs:
+                        temp = create_inj(pc, isa, pilot, mem_src_reg, \
+                                             max_bits, mem_bound)
+                        inj_count = len(temp)
+                        pc_pilot_map[pc][pilot] += inj_count
+                        if ctrl_or_store == 'ctrl':
+                            ctrl_equiv_inj += inj_count
+                        else:
+                            store_equiv_inj += inj_count
+                        output += temp#create_inj(pc, isa, pilot, mem_src_reg, \
+                                   #          max_bits, mem_bound)
+                            
+                # check destination register (pruning info found in def_pc)
+                if def_pc is not None:
+                    temp = create_def_inj(isa, pilot, pc, def_pc, max_bits)
+                    inj_count = len(temp)
+                    pc_pilot_map[pc][pilot] += inj_count
+                    if ctrl_or_store == 'ctrl':
+                        ctrl_equiv_inj += inj_count
+                    else:
+                        store_equiv_inj += inj_count
+                    output += temp #create_def_inj(isa, pilot, pc, def_pc, max_bits)
+    with open(app_prefix + '_inj_' + str(pop_size) + '_list.txt','w') as f:
         for inj in output:
             f.write('%s\n' % inj)
     total_inj = len(output)

@@ -104,22 +104,27 @@ class equiv_class_database(object):
         '''
         returns the equivalence classes with the largest pop (set by cutoff)
         '''
+        total_pop = 0
         pop_equiv_map = {}
         for equiv_id in self.pop_map:
             if self.pop_map[equiv_id] not in pop_equiv_map:
                 pop_equiv_map[self.pop_map[equiv_id]] = []
             pop_equiv_map[self.pop_map[equiv_id]].append(equiv_id)
-        cutoff_len = int(cutoff*len(self.pop_map))
         top_pop = sorted(pop_equiv_map.keys())
         top_pop.reverse()
         top_equiv_ids = []
-        i = 0
+        for pop in top_pop:
+            for equiv_id in pop_equiv_map[pop]:
+                total_pop += pop
+        cutoff_val = cutoff * total_pop
+        curr_pop = 0
+
         for pop in top_pop:
             for equiv_id in pop_equiv_map[pop]: 
-                if i == cutoff_len:
+                if curr_pop > cutoff_val:
                     break
                 top_equiv_ids.append(equiv_id)
-                i += 1
+                curr_pop += pop
         return top_equiv_ids
     def get_above_average_pops(self):
         '''

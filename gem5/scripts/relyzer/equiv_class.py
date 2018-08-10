@@ -61,22 +61,84 @@ class equiv_class(object):
         return output
 
 class equiv_class_database(object):
-    def __init__(self, filename):
+    def __init__(self, filename, get_members=False):
         '''
         creates a database depending on equiv class file (ctrl or store)
         '''
         equiv_class_list = open(filename).read().splitlines()[1:]
         self.equiv_class_map = {}
+        self.pop_map = {}  # gets population given the equiv id (pilot atm)
         equiv_classes = []
+        self.equiv_members_map = {}
 
         for item in equiv_class_list:
             equiv_classes.append(equiv_class(None,in_string=item))
         for _equiv_class in equiv_classes:
-            for member in _equiv_class.members:
-                self.equiv_class_map[member] = _equiv_class.pilot
+            members = _equiv_class.members
+            pilot = _equiv_class.pilot
+            pop = _equiv_class.pop
+            if get_members:
+                self.equiv_members_map[pilot] = members
+            for member in members:
+                self.equiv_class_map[member] = pilot
+            self.pop_map[pilot] = pop
     
+    def __contains__(self, equiv_id):
+        '''
+        check if equiv_id exists in db
+        '''
+        return equiv_id in self.equiv_class_map
+
     def get_pilot(self, inst_num):
         '''
         gets the pilot of the appropriate equiv class (if it exists)
         '''
         return self.equiv_class_map.get(inst_num, None)
+
+    def get_pop(self, equiv_id):
+        '''
+        gets the population of the equivalence class
+        '''
+        return self.pop_map[equiv_id]
+    def get_top_pops(self, cutoff):
+        '''
+        returns the equivalence classes with the largest pop (set by cutoff)
+        '''
+        pop_equiv_map = {}
+        for equiv_id in self.pop_map:
+            if self.pop_map[equiv_id] not in pop_equiv_map:
+                pop_equiv_map[self.pop_map[equiv_id]] = []
+            pop_equiv_map[self.pop_map[equiv_id]].append(equiv_id)
+        cutoff_len = int(cutoff*len(self.pop_map))
+        top_pop = sorted(pop_equiv_map.keys())
+        top_pop.reverse()
+        top_equiv_ids = []
+        i = 0
+        for pop in top_pop:
+            for equiv_id in pop_equiv_map[pop]: 
+                if i == cutoff_len:
+                    break
+                top_equiv_ids.append(equiv_id)
+                i += 1
+        return top_equiv_ids
+    def get_above_average_pops(self):
+        '''
+        calculates the average population and returns equiv ids
+        that have a population greater than or equal to the average
+        '''
+        pops = []
+        for equiv_id in self.pop_map:
+            pops.append(self.pop_map[equiv_id])
+        av_pop = sum(pops) / float(len(pops)) 
+        equiv_ids = []
+        for equiv_id in self.pop_map:
+            pop = self.pop_map[equiv_id]
+            if pop >= av_pop:
+                equiv_ids.append(equiv_id)
+        return equiv_ids
+        
+    def get_members(self, equiv_id):
+        '''
+        returns members of equiv class (if db was created to do so)
+        '''
+        return self.equiv_members_map.get(equiv_id, [])

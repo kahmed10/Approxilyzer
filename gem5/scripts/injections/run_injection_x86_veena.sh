@@ -37,7 +37,7 @@ cleanup () {
 touch $out_file
 
 app_faulty_output="output.txt"
-if [ "$app_name" == "sobel" ]; then
+if [[ "$app_name" = *"sobel"* ]]; then
     app_faulty_output="output.pgm"
 fi
 $GEM5_DIR/build/X86/gem5.fast --outdir=$TMP_DIR \

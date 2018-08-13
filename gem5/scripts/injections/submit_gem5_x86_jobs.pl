@@ -31,7 +31,7 @@ if ($job_list_length =~/^(\d+)/ ) {
 }
 print "Total number of jobs: $num_jobs\n";
 
-my $job_sub_file = "$APPROX_DIR/fault_list_output/condor_scripts/all_jobs_$num_jobs.condor";
+my $job_sub_file = "$APPROX_DIR/gem5/scripts/injections/all_jobs_$num_jobs.condor";
 
 if($num_jobs == 0) {
 	exit(1);

@@ -1373,7 +1373,7 @@ elsif ($app_name eq "streamcluster_simsmall" || $app_name =~ /streamcluster/)
 	} #end of sdc else
 
 } #end of app
-if($app_name eq "sobel_run_ref" || $app_name eq "sobel" || $app_name  =~ /jpeg/ || $app_name =~ /kmeans/ )
+if($app_name =~ /sobel/ || $app_name  =~ /jpeg/ || $app_name =~ /kmeans/ )
 {
 	my $golden_file = "$GOLDEN_DIR/$app_name.output";
 	$result = `diff -q $output_file $golden_file`;

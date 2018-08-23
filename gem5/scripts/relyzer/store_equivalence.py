@@ -226,8 +226,7 @@ class store_equivalence(object):
                 while inst_idx > 0 and len(curr_regs) > 0:
                     curr_inst = bb.insts[inst_idx]
                     pc = curr_inst.pc
-                    if pc not in self.ld_inst_pcs and \
-                            pc not in self.st_inst_pcs:
+                    if pc not in self.st_inst_pcs:
                         dest_reg = curr_inst.dest_reg
                         if dest_reg is not None:
                             for reg in curr_regs:

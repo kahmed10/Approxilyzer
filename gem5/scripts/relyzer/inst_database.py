@@ -231,10 +231,14 @@ class inst_database(object):
                             inst.add_dest_reg(dest_info)
                         
                 elif len(comma_split) == 2:
-                    src_info = comma_split[0]
-                    dest_info = comma_split[-1]
-                    inst.add_src_reg(src_info)
-                    inst.add_dest_reg(dest_info)
+                    if 'cmp' in op:
+                        inst.add_src_reg(comma_split[0])
+                        inst.add_src_reg(comma_split[1])
+                    else:
+                        src_info = comma_split[0]
+                        dest_info = comma_split[-1]
+                        inst.add_src_reg(src_info)
+                        inst.add_dest_reg(dest_info)
 
                 elif len(comma_split) == 3:
                     src_info = comma_split[1]

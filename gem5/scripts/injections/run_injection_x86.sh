@@ -60,7 +60,7 @@ if [ -f "$TMP_DIR/${app_faulty_output}" ]; then
         echo ${fi_args}"::Masked" >> $out_file
 
     else
-        result=`perl $SCRIPTS_DIR/app_level_analysis.pl $app_name $TMP_DIR/${app_faulty_output} $id`
+        result=`perl $SCRIPTS_DIR/detailed_app_level_analysis.pl $app_name $TMP_DIR/${app_faulty_output} $id`
         echo ${fi_args}"::$result" >> $out_file
 
     fi

@@ -21,6 +21,7 @@ DISK_DIR=$APPROXGEM5/dist/m5/system/disks
 TMP_DIR=/scratch/$LOGNAME/m5out_$id
 OUT_DIR=$GEM5_DIR/outputs/x86
 out_file=$OUT_DIR/$app_name-${out_id}.output
+kernel=$APPROXGEM5/dist/m5/system/binaries/vmlinux-4.9.113
 
 if [ -d $TMP_DIR ]; then  # as a sanity check for now
     rm -rf $TMP_DIR
@@ -40,9 +41,15 @@ app_faulty_output="output.txt"
 if [[ "$app_name" = *"sobel"* ]] || [[ "$app_name" = *"kmeans"* ]]; then
     app_faulty_output="output.pgm"
 fi
+
+if [[ "$app_name" = *"jpeg"* ]]; then
+    app_faulty_output="output.jpg"
+fi
+
 $GEM5_DIR/build/X86/gem5.fast --outdir=$TMP_DIR \
     $GEM5_DIR/configs/example/fs_fi.py --fi=${fi_args} \
-    --disk-image=$DISK_DIR/$disk_image -r $ckpt &> $TMP_DIR/temp_${id}.txt
+    --disk-image=$DISK_DIR/$disk_image \
+    --kernel=$kernel -r $ckpt &> $TMP_DIR/temp_${id}.txt
 
 if grep -q "Timeout" $TMP_DIR/temp_${id}.txt; then 
     echo ${fi_args}"::Detected:Timeout" >> $out_file

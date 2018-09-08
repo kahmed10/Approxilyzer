@@ -26,11 +26,12 @@ if [ "$isa" == "sparc" ]; then
 fi
 
 if [ $# -eq 3 ]; then
+    kernel=$APPROXGEM5/dist/m5/system/binaries/vmlinux-4.9.113
     disk_image=$IMG_DIR/$3
     $GEM5_DIR/build/$gem5_isa/gem5.opt -d $CKPT_DIR \
     --debug-flags=MemoryAccess \
     --debug-file=${app}_mem_dump.gz $GEM5_DIR/configs/example/fs.py \
-    --disk-image=$disk_image -r 1
+    --disk-image=$disk_image --kernel=$kernel -r 1
 else
     $GEM5_DIR/build/$gem5_isa/gem5.opt -d $CKPT_DIR \
     --debug-flags=MemoryAccess \

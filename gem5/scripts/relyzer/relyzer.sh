@@ -2,7 +2,7 @@
 
 # This script combines many steps of pre-processing into one (in progress)
 
-if [ $# -lt 2 ] && [ $# -gt 3 ]; then
+if [ $# -lt 2 ] || [ $# -gt 3 ]; then
     echo "Usage : ./relyzer.sh [app_name] [isa] (pop_coverage_size)"
     exit 1
 fi

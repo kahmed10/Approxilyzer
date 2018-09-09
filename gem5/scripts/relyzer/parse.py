@@ -43,8 +43,7 @@ inst_num_pc_map = {}
 inst_num_map = {}
 
 apps_dir = approx_dir + '/workloads/' + isa + '/apps/' + app_name
-if not os.path.exists(apps_dir):
-    os.makedirs(approx_dir)
+
 outfile = apps_dir + '/' + app_name + '_dump_parsed.txt'
 output = open(outfile, 'w')
 for line in dis_list:

@@ -109,14 +109,15 @@ for cind in range(0,len(conins_index)-1):
 
 # instructions after the last control block are to be included; the last instruction probably is a control instruction though.        
 print('Basic blocks created.')
+program_len = len(program_bb)
 print('Program length in bbs:', len(program_bb))
 print('Number of basic blocks:', len(basicblocks))
 
 
 
-
 # create equivalence classes and find their ticks
-equiclass_depth = 50    # length of elements in equivalence class
+# length of elements in equivalence class
+equiclass_depth = min(50,program_len)
 equiclass_cap = 50 # cap on number of equivalence classes per basic block
 equiclass_map = {}   # list of equivalence classes
 equiclass_index_map = {} # stores indices for members of equivalence class

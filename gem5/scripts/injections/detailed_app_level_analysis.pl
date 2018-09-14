@@ -1372,7 +1372,53 @@ elsif ($app_name eq "streamcluster_simsmall" || $app_name =~ /streamcluster/)
 
 	} #end of sdc else
 
-} #end of app
+} 
+elsif ($app_name =~ /ctaes/)
+{
+	my $golden_file = "$GOLDEN_DIR/$app_name.output";
+	$result = `diff -q $output_file $golden_file`;
+	if ($result eq "") {
+		print "Masked\n";
+	}
+	else
+	{
+		open IN_GF, "<$golden_file";
+		open IN_FF, "<$output_file";
+		my $weird_val = 0;
+		my $line_mismatch = 0;
+		my $num_char_mismatch = 0;
+		my @g_lines = <IN_GF>;
+		my @f_lines = <IN_FF>;
+		close IN_GF;
+		close IN_FF;
+
+		if($#g_lines != $#f_lines) {
+			$line_mismatch = 1;
+			#$eggregious = 1;
+		} 
+		else
+		{
+
+			foreach $i (0 .. $#g_lines) 
+			{ 
+				my $g_line = $g_lines[$i];
+				my $f_line = $f_lines[$i];
+				chomp($g_line);
+				chomp($f_line);
+
+				if (length($g_line) != length($f_line))
+				{
+					$num_char_mismatch = 1;	
+				}
+				if ($f_line =~ m/[^a-fA-F0-9]/) #anything other than alpha-numeric
+				{
+					$weird_val = 1;
+				}
+			}
+		}
+		printf ("SDC:Egregious;%d,%d,%d\n",$line_mismatch,$num_char_mismatch,$weird_val);
+	} 
+}#end of app
 if($app_name =~ /sobel/ || $app_name  =~ /jpeg/ || $app_name =~ /kmeans/ )
 {
 	my $golden_file = "$GOLDEN_DIR/$app_name.output";

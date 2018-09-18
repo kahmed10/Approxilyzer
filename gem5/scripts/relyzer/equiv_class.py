@@ -50,6 +50,13 @@ class equiv_class(object):
         if len(self.members) > 0:
             rand_pilot_idx = random.randint(0,len(self.members)-1)
             self.pilot = self.members[rand_pilot_idx]
+    
+    def set_pilot(self,pilot):
+        '''
+        sets the pilot if known beforehand.
+        Args: pilot - the predetermined pilot.
+        '''
+        self.pilot = pilot
 
     def print_equiv_class(self):
         '''

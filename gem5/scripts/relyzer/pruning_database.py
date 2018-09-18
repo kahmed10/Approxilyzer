@@ -4,8 +4,10 @@
 # in order to create a pruning database.
 
 import os
+import shutil
 import sys
 
+from equiv_class import equiv_class
 from inst_database import instruction
 from trace import trace
 
@@ -106,36 +108,65 @@ class pruning_database(object):
 
         pc_idx = 0
         pilot_idx = 2
+        member_idx = 3 
 
+        new_store_equiv_file = app_prefix + '_final_store_equivalence.txt'
+        new_ctrl_equiv_file = app_prefix + '_final_control_equivalence.txt'
+
+        dep_stores_equiv_classes = []
         for item in store_equiv_info:
             pc = item[pc_idx]
             pilot = item[pilot_idx]
-            
+            members = item[member_idx].split()
             self._add_to_pc_map(pc, pilot, 'store')
             store_equiv_pcs.add(pc)
 
+            # build non-store pc equivalence classes for
+            # store equivalence (previously in control_equiv file)
             if pc in dep_stores_info:
                 for dep_pc in dep_stores_info[pc]:
                     dep_pc_pilot = ''
-                    store_idx = trace_info.get_idx(pilot)
-                    for i in range(store_idx,-1,-1):
-                        trace_item = trace_info[i]
-                        if trace_item.pc == dep_pc:
-                            dep_pc_pilot = trace_item.inst_num
-                            self._add_to_pc_map(dep_pc, dep_pc_pilot, 'store')
-                            store_equiv_pcs.add(dep_pc)
-                            break
-                
+                    dep_pc_equiv = equiv_class(dep_pc)
+                    for member in members:
+                        store_idx = trace_info.get_idx(member)
+                        for i in range(store_idx,-1,-1):
+                            trace_item = trace_info[i]
+                            if trace_item.pc == dep_pc:
+                                if member == pilot:
+                                    dep_pc_pilot = trace_item.inst_num
+                                    self._add_to_pc_map(dep_pc, dep_pc_pilot,
+                                                        'store')
+                                    store_equiv_pcs.add(dep_pc)
+                                dep_pc_equiv.add_member(
+                                        trace_item.inst_num) 
+                                break
+                    dep_pc_equiv.set_pilot(dep_pc_pilot)
+                    dep_stores_equiv_classes.append(dep_pc_equiv)
+
+        new_ctrl_info = []  # stores pcs that stores do not depend on 
         for item in ctrl_equiv_info:
             pc = item[pc_idx]
             pilot = item[pilot_idx]
             if pc not in store_equiv_pcs:
                 self._add_to_pc_map(pc, pilot, 'ctrl') 
-                 
-                        
-            
-        self.pc_list = sorted(self.pc_map.keys())
+                new_ctrl_info.append(item)
 
+        # update final equivalence class files
+        with open(new_ctrl_equiv_file, 'w') as f:
+            for item in new_ctrl_info:
+                f.write('%s\n' % ':'.join(item))
+
+        del new_ctrl_info
+        
+        shutil.copy(store_equiv_file,new_store_equiv_file)    
+        with open(new_store_equiv_file, 'a') as f:
+            for item in dep_stores_equiv_classes: 
+                f.write('%s\n' % item.print_equiv_class())            
+
+        del dep_stores_equiv_classes
+        
+        self.pc_list = sorted(self.pc_map.keys())
+            
    
             
     def _add_to_pc_map(self, pc, pilot, ctrl_or_store):

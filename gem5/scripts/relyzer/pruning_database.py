@@ -127,21 +127,36 @@ class pruning_database(object):
                 for dep_pc in dep_stores_info[pc]:
                     dep_pc_pilot = ''
                     dep_pc_equiv = equiv_class(dep_pc)
+                    is_ctrl = False
                     for member in members:
                         store_idx = trace_info.get_idx(member)
+                        added_to_pc_map = False
                         for i in range(store_idx,-1,-1):
                             trace_item = trace_info[i]
+                            is_ctrl = self.inst_db_map[
+                                    trace_item.pc].ctrl_flag
+                            if is_ctrl:
+                                if dep_pc in store_equiv_pcs:
+                                    store_equiv_pcs.remove(dep_pc)
+                                if added_to_pc_map:
+                                    self._remove_from_pc_map(dep_pc)
+                                dep_stores_info[pc].remove(dep_pc)
+                                break
                             if trace_item.pc == dep_pc:
                                 if member == pilot:
                                     dep_pc_pilot = trace_item.inst_num
-                                    self._add_to_pc_map(dep_pc, dep_pc_pilot,
+                                    self._add_to_pc_map(dep_pc,dep_pc_pilot,
                                                         'store')
+                                    added_to_pc_map = True
                                     store_equiv_pcs.add(dep_pc)
                                 dep_pc_equiv.add_member(
                                         trace_item.inst_num) 
                                 break
+                        if is_ctrl:
+                            break
                     dep_pc_equiv.set_pilot(dep_pc_pilot)
-                    dep_stores_equiv_classes.append(dep_pc_equiv)
+                    if not is_ctrl:
+                        dep_stores_equiv_classes.append(dep_pc_equiv)
 
         new_ctrl_info = []  # stores pcs that stores do not depend on 
         for item in ctrl_equiv_info:
@@ -186,6 +201,11 @@ class pruning_database(object):
         if pc not in self.pc_map:
             self.pc_map[pc] = []
         self.pc_map[pc].append(pc_obj)
+    
+    def _remove_from_pc_map(self, pc):
+        curr_pc_obj = self.pc_map[pc][-1]  # get last element added to list
+        if curr_pc_obj.ctrl_or_store == 'store':
+            self.pc_map[pc].pop()
 
     def print_pruning_db(self,filename):
         
@@ -208,7 +228,6 @@ class pruning_database(object):
                     do_inject, src_regs, mem_src_regs, dest_reg,
                     is_mem, pilot, max_bits))
         output.close()
-
 if __name__ == '__main__':
     if len(sys.argv) != 3:
         print('Usage: python gen_pruning_database.py [app_name] [isa]')

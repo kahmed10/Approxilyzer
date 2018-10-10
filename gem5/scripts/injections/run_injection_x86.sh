@@ -1,7 +1,7 @@
 #/!bin/bash
 
 if [ $# -ne 6 ]; then
-    echo "Usage: ./run_injection_x86_veena.sh [app_name] [fi_args] [app_ckpt_num] [app_output (in m5out)] [disk_image (in dist/m5/system/disks)] [id]"
+    echo "Usage: ./run_injection_x86.sh [app_name] [fi_args] [app_ckpt_num] [app_output (in m5out)] [disk_image (in dist/m5/system/disks)] [id]"
     exit 1
 fi
 

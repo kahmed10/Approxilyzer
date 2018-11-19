@@ -54,5 +54,6 @@ for line in dump_mem_list:
                 break
             if 'Read' in read_or_write  or 'Write' in read_or_write:
                 address = temp[10]  # consistent with gem5 tracer
-                outfile.write('%s %s %s\n' % (tick, read_or_write, address))
+                size = temp[7]  # consistent with gem5 tracer
+                outfile.write('%s %s %s %s\n' % (tick, read_or_write, address, size))
 outfile.close()

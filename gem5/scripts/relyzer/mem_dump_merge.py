@@ -37,7 +37,8 @@ for line in mem_list:
     tick = temp[0]
     r_w = temp[1]
     addr = temp[2]
-    mem_map[tick] = (r_w, addr)
+    size = temp[3]
+    mem_map[tick] = (r_w, addr, size)
 
 output = open(merged_dump, 'w')
 for line in orig_list:
@@ -51,13 +52,15 @@ for line in orig_list:
             if tick in mem_map:
                 r_w = mem_map[tick][0]
                 addr = mem_map[tick][1]
-                line += ' %s %s' % (r_w, addr)
+                size = mem_map[tick][2]
+                line += ' %s %s %s' % (r_w, addr, size)
         
     else:
         if tick in mem_map:
             r_w = mem_map[inst_num][0]
             addr = mem_map[inst_num][1]
-            line += ' %s %s' % (r_w, addr)
+            size = mem_map[inst_num][2]
+            line += ' %s %s %s' % (r_w, addr, size)
     output.write(line + '\n')
 output.close()
 

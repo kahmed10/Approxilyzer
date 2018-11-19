@@ -88,7 +88,7 @@ program_bb = []
 for cind in range(0,len(conins_index)-1):
     if cind == 0:
         ctrl_start = conins_index[0]
-        if ctrl_start > 1:
+        if ctrl_start >= 1:
             bbstart = tick_pc_list[0][1][2:]
             bbend = tick_pc_list[ctrl_start-1][1][2:]
             tick_val = int(tick_pc_list[0][0])

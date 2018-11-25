@@ -256,7 +256,7 @@ class inst_database(object):
                         src_info = comma_split[0]
                         inst.add_src_reg(src_info)
                         src_info = ','.join(comma_split[1:3])
-                        inst.add_src_reg(src_info)
+                        inst.add_src_reg(src_info,is_mem=True)
                     
                 self.insts.append(inst)
         f.close()

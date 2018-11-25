@@ -7,12 +7,15 @@ import gzip
 import os
 import sys
 
-if len(sys.argv) != 3:
-    print('Usage: python parse_mem.py [app_name] [isa]')
+if len(sys.argv) < 3 or len(sys.argv) > 4:
+    print('Usage: python parse_mem.py [app_name] [isa] (extra_info)')
     exit()
 
 app_name = sys.argv[1]
 isa = sys.argv[2]
+extra_flag = False
+if len(sys.argv) == 4:
+    extra_flag = True
 
 approx_dir = os.environ.get('APPROXGEM5')
 
@@ -39,7 +42,12 @@ tick_end = micro_inst_trace_list[-1].split(':')[1].split(',')[-1]
 del micro_inst_trace_list
 
 out_filename = apps_dir + '/' + app_name + '_mem_dump_parsed.txt'
+out_filename2 = appps_idr + '/' + app_name + '_mem_dump_parsed_extra.txt'
 outfile = open(out_filename, 'w')
+if extra_flag:
+    outfile2 = open(out_filename2, 'w')
+else:
+    outfile2 = None
 for line in dump_mem_list:
     temp = line.split()
     if len(temp) > 0:
@@ -55,5 +63,11 @@ for line in dump_mem_list:
             if 'Read' in read_or_write  or 'Write' in read_or_write:
                 address = temp[10]  # consistent with gem5 tracer
                 size = temp[7]  # consistent with gem5 tracer
-                outfile.write('%s %s %s %s\n' % (tick, read_or_write, address, size))
+                if extra_flag:
+                    outfile2.write('%s %s %s %s\n' % (tick, read_or_write, address, size))
+                else:
+                    outfile.write('%s %s %s\n' % (tick, read_or_write, address))
+                    
 outfile.close()
+if extra_flag:
+    outfile2.close()

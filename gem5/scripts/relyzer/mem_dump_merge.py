@@ -6,12 +6,15 @@
 import os
 import sys
 
-if len(sys.argv) != 3:
-    print('Usage: python mem_dump_merge.py [app_name] [isa]')
+if len(sys.argv) < 3 or len(sys.argv) > 4:
+    print('Usage: python mem_dump_merge.py [app_name] [isa] (extra_info)')
     exit()
 
 app_name = sys.argv[1]
 isa = sys.argv[2]
+extra_flag = False
+if len(sys.argv) == 4:
+    extra_flag = True
 
 approx_dir = os.environ.get('APPROXGEM5')
 
@@ -23,6 +26,7 @@ orig_dump = apps_dir + '/' + app_name + '_dump_parsed.txt'
 micro_dump = apps_dir + '/' + app_name + '_dump_parsed_micro.txt'
 mem_dump = apps_dir + '/' + app_name + '_mem_dump_parsed.txt'
 merged_dump = apps_dir + '/' + app_name + '_clean_dump_parsed_merged.txt'
+merged_dump_extra = apps_dir + '/' + app_name + '_clean_dump_parsed_merged_extra.txt'
 
 orig_list = open(orig_dump).read().splitlines()
 micro_tick_map = {}
@@ -41,6 +45,10 @@ for line in mem_list:
     mem_map[tick] = (r_w, addr, size)
 
 output = open(merged_dump, 'w')
+if extra_flag:
+    output2 = open(merged_dump_extra, 'w')
+else:
+    output2 = None
 for line in orig_list:
     temp = line.split()
     inst_num = temp[0]
@@ -53,14 +61,20 @@ for line in orig_list:
                 r_w = mem_map[tick][0]
                 addr = mem_map[tick][1]
                 size = mem_map[tick][2]
-                line += ' %s %s %s' % (r_w, addr, size)
+                line += ' %s %s' % (r_w, addr)
+                extra_line += ' %s %s %s' % (r_w, addr, size)
         
     else:
         if tick in mem_map:
             r_w = mem_map[inst_num][0]
             addr = mem_map[inst_num][1]
             size = mem_map[inst_num][2]
-            line += ' %s %s %s' % (r_w, addr, size)
+            line += ' %s %s' % (r_w, addr)
+            extra_line += ' %s %s %s' % (r_w, addr, size)
     output.write(line + '\n')
+    if extra_flag:
+        output2.write(extra_line + '\n')
 output.close()
+if extra_flag:
+    output2.close()
 

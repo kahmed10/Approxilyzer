@@ -247,10 +247,16 @@ class inst_database(object):
                     inst.add_dest_reg(dest_info)
                 # usually referring to memory (ex. imul (%rcx,%r8,1),%edx)
                 elif len(comma_split) == 4:
-                    src_info = ','.join(comma_split[0:2])
-                    dest_info = comma_split[-1]
-                    inst.add_src_reg(src_info,is_mem=True)
-                    inst.add_dest_reg(dest_info)
+                    if comma_split[0].startswith('('):
+                        src_info = ','.join(comma_split[0:2])
+                        dest_info = comma_split[-1]
+                        inst.add_src_reg(src_info,is_mem=True)
+                        inst.add_dest_reg(dest_info)
+                    elif comma_split[1].startswith('('):
+                        src_info = comma_split[0]
+                        inst.add_src_reg(src_info)
+                        src_info = ','.join(comma_split[1:3])
+                        inst.add_src_reg(src_info)
                     
                 self.insts.append(inst)
         f.close()

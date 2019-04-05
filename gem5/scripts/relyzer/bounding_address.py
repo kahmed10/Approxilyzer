@@ -24,7 +24,7 @@ max_addr = None
 
 for line in mem_list:
     temp = line.split()
-    addr = int(temp[-1],16)
+    addr = int(temp[2],16)
     if min_addr is None:
         min_addr = addr
         max_addr = addr

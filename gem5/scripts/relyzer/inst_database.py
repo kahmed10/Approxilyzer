@@ -12,6 +12,7 @@ arithmetic_ops = ['add', 'sub', 'mul', 'div', 'neg', 'adc', 'sbb', 'inc', 'dec']
 control_ops = ['jmp', 'je', 'jn', 'jg', 'ja', 'jl', 'jb', 'jo', 'jz',
                'js', 'call', 'loop', 'ret']
 
+segment_regs = ['%ss', '%gs', '%fs', '%ds', '%cs', '%es']
 
 valid_pattern = re.compile('^\s+[0-9a-fA-F]+:\s*[a-zA-Z]+.*')
 # we assume stack registers (rbp,rsp) are protected
@@ -29,6 +30,9 @@ reg_pattern = ['%ax', '%al', '%ah', '%rax', '%eax',
                '%xmm14', '%xmm15',
                '%fpr0', '%fpr1', '%fpr2', '%fpr3', '%fpr4', '%fpr5', '%fpr6',
                '%fpr7']
+
+
+
 paren_match = re.compile('.*\(.*\).*')
 
 reg_matches = []
@@ -214,7 +218,17 @@ class inst_database(object):
                     reg_info = data[1].split(' ', 1)[1]
 
                 inst = instruction(pc,op)
+                if 'nop' in op:  # ignore nops
+                    self.insts.append(inst)
+                    continue
                 comma_split = reg_info.lstrip().split(',')
+                if 'mov' in op:
+                    for comma_sv in comma_split:
+                        for segment_reg in segment_regs:
+                            if segment_reg in comma_sv:
+                                inst.is_mem = True
+                                break
+                        
                 # in x86, the number of src/dest operands varies
                 if len(comma_split) == 1:
                     is_src_op = False
@@ -247,10 +261,16 @@ class inst_database(object):
                     inst.add_dest_reg(dest_info)
                 # usually referring to memory (ex. imul (%rcx,%r8,1),%edx)
                 elif len(comma_split) == 4:
-                    src_info = ','.join(comma_split[0:2])
-                    dest_info = comma_split[-1]
-                    inst.add_src_reg(src_info,is_mem=True)
-                    inst.add_dest_reg(dest_info)
+                    if comma_split[0].startswith('('):
+                        src_info = ','.join(comma_split[0:2])
+                        dest_info = comma_split[-1]
+                        inst.add_src_reg(src_info,is_mem=True)
+                        inst.add_dest_reg(dest_info)
+                    elif comma_split[1].startswith('('):
+                        src_info = comma_split[0]
+                        inst.add_src_reg(src_info)
+                        src_info = ','.join(comma_split[1:3])
+                        inst.add_src_reg(src_info,is_mem=True)
                     
                 self.insts.append(inst)
         f.close()

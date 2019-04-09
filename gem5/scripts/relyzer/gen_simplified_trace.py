@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
-# this script parses the trace and gets only the cycle and PC
-# for x86, the ticks for the microinsts are also recorded
+# this script parses the compressed trace from gem5 and produces
+# a simplified one used for Relyzer analysis.
 
 import gzip
 import io

@@ -16,22 +16,23 @@ approx_dir = os.environ.get('APPROXGEM5')
 apps_dir = approx_dir + '/workloads/' + isa + '/apps/' + app_name
 app_prefix = apps_dir + '/' + app_name
 
-mem_file = app_prefix + '_mem_dump_parsed.txt'
-mem_list = open(mem_file).read().splitlines()
+trace_file = app_prefix + '_clean_dump_parsed_merged.txt'
 
 min_addr = None
 max_addr = None
 
-for line in mem_list:
-    temp = line.split()
-    addr = int(temp[2],16)
-    if min_addr is None:
-        min_addr = addr
-        max_addr = addr
-    if addr < min_addr:
-        min_addr = addr
-    if addr > max_addr:
-        max_addr = addr
+with open(trace_file) as trace:
+    for line in trace:
+        temp = line.split()
+        if len(temp) > 2:
+            addr = int(temp[3],16)
+            if min_addr is None:
+                min_addr = addr
+                max_addr = addr
+            if addr < min_addr:
+                min_addr = addr
+            if addr > max_addr:
+                max_addr = addr
 
 print('Min addr: 0x%x' % min_addr)
 print('Max addr: 0x%x' % max_addr)

@@ -2,10 +2,13 @@
 
 # This script build control equivalence classes.
 
+import anydbm
 import os
 import random
 import sys
 
+from inst_database import instruction
+from trace import trace_item
 
 seed_val = 1  # seed to ensure consistency when selecting pilots
 
@@ -22,90 +25,63 @@ approx_dir = os.environ.get('APPROXGEM5')
 apps_dir = approx_dir + '/workloads/' + isa + '/apps/' + app_name
 app_prefix = apps_dir + '/' + app_name
 
-pc_fname = app_prefix + '_parsed.txt'
-ins_fname = app_prefix + '_clean_dump_parsed_merged.txt'
+db_filename = app_prefix + '_parsed.txt'
+trace_filename = app_prefix + '_clean_dump_parsed_merged.txt'
 
 
-
-pc_fname_list = open(pc_fname).read().splitlines()
-
-pc_content = [line.split() for line in pc_fname_list[1:]]
-
-del pc_fname_list
+db_info = [i for i in open(db_filename).read().splitlines()[1:]]
+insts = [instruction(None,None,i) for i in db_info]
+ctrl_insts = set([i.pc for i in insts if i.ctrl_flag])
 
 
-#pc_content = [x.strip().split() for x in pc_content[1:]] 
-
-
-# get information about the time clocks
-with open(ins_fname) as f:
-    ins_content = f.readlines()
-
-ins_file_list = open(ins_fname).read().splitlines()
-
-ins_content = [x.strip().split() for x in ins_file_list] 
-
-del ins_file_list
-
-print('Number of ticks', len(ins_content))
-print('Number of PCs', len(pc_content))
-
-
-
-
-# create a map which can be keyed with PC value to find whether instruction is control or not
-pc_key = [item[0] for item in pc_content]
-pc_control_map = {}
-for pc in pc_key:
-    pc_control_map[pc] = []
-
-for pc in pc_control_map:
-    cflag = [item[2] for item in pc_content if item[0] == pc]
-    if cflag[0] == 'True':
-        pc_control_map[pc].append(1) # append 1 if it is a control instruction
-    else:
-        pc_control_map[pc].append(0) # appned 0 if it is not a control instruction
-
-
-
-
-# remove the ticks not present in PC Key (library access etc)
-tick_pc_list = ins_content  #[item for item in ins_content if item[1][2:] in pc_key] # 2: here gets rid of 0x
-
-
-
-
-# find basic blocks
-conins_index = [i for i in range(0,len(tick_pc_list)) if pc_control_map[tick_pc_list[i][1][2:]][0] == 1] # index for control instructions
 
 # list of basic blocks. Each list element is a 2-length list with
 # first element as start PC and second as end PC
-basicblocks = []
+basicblocks = set() # defaultdict(int)
 # program represented as basic blocks with tick value at start of basic block
 program_bb = [] 
 
 
-for cind in range(0,len(conins_index)-1):
-    if cind == 0:
-        ctrl_start = conins_index[0]
-        if ctrl_start >= 1:
-            bbstart = tick_pc_list[0][1][2:]
-            bbend = tick_pc_list[ctrl_start-1][1][2:]
-            tick_val = int(tick_pc_list[0][0])
-            basicblocks.append([str(bbstart), str(bbend)])
-            program_bb.append([tick_val, 0])
-    if conins_index[cind+1] - conins_index[cind] >= 2: # check if there are PCs between two control instructions
-        bbstart = tick_pc_list[conins_index[cind] + 1][1][2:]
-        bbend = tick_pc_list[conins_index[cind+1] - 1][1][2:]
-        
-        if [str(bbstart), str(bbend)] not in basicblocks: # check if this basic block is new
-            basicblocks.append([str(bbstart), str(bbend)])
-            
-        bbnum = [i for i in range(0,len(basicblocks)) if [str(bbstart), str(bbend)] == basicblocks[i]]
-        if len(bbnum)>1:
-                print('Repeat entry in basicblocks')
-        tick_val = int(tick_pc_list[conins_index[cind] + 1][0])
-        program_bb.append([tick_val, bbnum[0]])
+with open(trace_filename) as trace:
+    bbstart = None
+    bbend = None
+    start_of_bb = True
+    pc = None
+    prev_pc = pc
+    for line in trace:
+        items = line.split()
+        item = trace_item(items)
+        pc = item.pc
+        inst_num = item.inst_num
+        if pc in ctrl_insts:
+            if not start_of_bb:
+                start_of_bb = True
+        elif start_of_bb:
+            basicblocks.add(pc)
+            program_bb.append([inst_num, pc])
+            start_of_bb = False
+
+# for cind in range(0,len(conins_index)-1):
+#     if cind == 0:
+#         ctrl_start = conins_index[0]
+#         if ctrl_start >= 1:
+#             bbstart = tick_pc_list[0][1][2:]
+#             bbend = tick_pc_list[ctrl_start-1][1][2:]
+#             tick_val = int(tick_pc_list[0][0])
+#             basicblocks.append([str(bbstart), str(bbend)])
+#             program_bb.append([tick_val, 0])
+#     if conins_index[cind+1] - conins_index[cind] >= 2: # check if there are PCs between two control instructions
+#         bbstart = tick_pc_list[conins_index[cind] + 1][1][2:]
+#         bbend = tick_pc_list[conins_index[cind+1] - 1][1][2:]
+#         
+#         if [str(bbstart), str(bbend)] not in basicblocks: # check if this basic block is new
+#             basicblocks.append([str(bbstart), str(bbend)])
+#             
+#         bbnum = [i for i in range(0,len(basicblocks)) if [str(bbstart), str(bbend)] == basicblocks[i]]
+#         if len(bbnum)>1:
+#                 print('Repeat entry in basicblocks')
+#         tick_val = int(tick_pc_list[conins_index[cind] + 1][0])
+#         program_bb.append([tick_val, bbnum[0]])
 
 # instructions after the last control block are to be included; the last instruction probably is a control instruction though.        
 print('Basic blocks created.')
@@ -239,50 +215,111 @@ for main_index in range(len(program_bb)-equiclass_depth,len(program_bb)):
 print('Equivalence classes created.')
 
 
-pc_equiclass_map = {}
+# pc_equiclass_map = {}
 # pc -> equiclass_id: [ ticks belonging to that equiclass id ]
 
 
+del equiclass_map
+del equiclass_ticks_map
+del equiclass_bb_count
+del bb_id_depth
 
-bb_idx = -1
-bb_id = None
-index = None
-for item in tick_pc_list:
-    tick = item[0]
-    pc = item[1][2:]
-    if bb_idx < len(program_bb)-1:  # starting tick indicates new bb
-        if int(tick) == program_bb[bb_idx+1][0]:
-            bb_idx += 1
-            bb_id = program_bb[bb_idx][1]
-            index = program_bb[bb_idx][0]
-    if pc_control_map[pc][0] == 1:  # ignore control instructions
-        continue
-    if len(item) > 2:  # store inst check
-        if item[2] == 'Write':
-            continue  # stores will be handled w/ store equiv
-    for equiv_id in equiclass_index_map[bb_id]:
-        if bb_idx in equiclass_index_map[bb_id][equiv_id]:
+
+
+def get_equiv_id_index(equiv_id, equiv_id_list):
+    for i in xrange(len(equiv_id_list)):
+        if equiv_id_list[i] == equiv_id:
             break
-    if pc not in pc_equiclass_map:
-        pc_equiclass_map[pc] = {}
-    if equiv_id not in pc_equiclass_map[pc]:
-        pc_equiclass_map[pc][equiv_id] = []
-    pc_equiclass_map[pc][equiv_id].append(tick)
+    return i + 1
 
 output_file = app_prefix + '_control_equivalence.txt' 
 output = open(output_file, 'w')
-output.write('pc:population:pilot:members\n')
-pc_list = sorted(pc_equiclass_map.keys())
 random.seed(seed_val)  # randomly select a tick to be the pilot
-for pc in pc_list:
-    for equiv_id in pc_equiclass_map[pc]:
-        ctrl_equiclass = '%s:' % pc
-        tick_list = pc_equiclass_map[pc][equiv_id]
-        ctrl_equiclass += '%d:' % len(tick_list)
-        rand_tick_idx = random.randint(0,len(tick_list)-1)
-        rand_tick = tick_list[rand_tick_idx]
-        ctrl_equiclass += '%s:' % rand_tick
-        ctrl_equiclass += ' '.join(tick_list)
-        output.write('%s\n' % ctrl_equiclass)
+output.write('pc:population:pilot:members\n')
+for bb in basicblocks:
+    pc_equiclass_map = {}
+    # bb_found = 0
+    bb_idx = -1
+    bb_id = None
+    # index = None
+    with open(trace_filename) as trace:
+        for line in trace:
+            items = line.split()
+            item = trace_item(items)
+            tick = item.inst_num
+            pc = item.pc
+            if bb_idx < len(program_bb)-1:  # starting tick indicates new bb
+                if tick == program_bb[bb_idx+1][0]:
+                    bb_idx += 1
+                    bb_id = program_bb[bb_idx][1]
+                    # index = program_bb[bb_idx][0]
+            if bb_id != bb:
+                continue
+            # bb_found += 1
+            if pc in ctrl_insts:  # ignore control instructions
+                continue
+            if item.is_store():  # store inst check
+                continue  # stores will be handled w/ store equiv
+            for equiv_id in equiclass_index_map[bb_id]:
+                if bb_idx in equiclass_index_map[bb_id][equiv_id]:
+                    break
+            if pc not in pc_equiclass_map:
+                # pc_equiclass_map[pc] = [[equiv_id],[]]
+                pc_equiclass_map[pc] = {}
+            if equiv_id not in pc_equiclass_map[pc]:
+            # if equiv_id not in pc_equiclass_map[pc][0]:
+                pc_equiclass_map[pc][equiv_id] = []
+                # pc_equiclass_map[pc][0].append(equiv_id)
+                # pc_equiclass_map[pc].append([])
+            # equiv_id_index = get_equiv_id_index(equiv_id, pc_equiclass_map[pc][0])
+            # pc_equiclass_map[pc][equiv_id_index].append(tick)
+            pc_equiclass_map[pc][equiv_id].append(tick)
+    # print(bb_found)
+    pc_list = sorted(pc_equiclass_map.keys())
+    print_full_flag = True
+    for pc in pc_list:
+        # if pc == '40138e':
+        #     test = 0
+        # for equiv_id in xrange(1,len(pc_equiclass_map[pc])):
+        for equiv_id in pc_equiclass_map[pc]:
+            ctrl_equiclass = '%s:' % pc
+            tick_list = pc_equiclass_map[pc][equiv_id]
+            ctrl_equiclass += '%d:' % len(tick_list)
+            rand_tick_idx = random.randint(0,len(tick_list)-1)
+            rand_tick = tick_list[rand_tick_idx]
+            ctrl_equiclass += '%s:' % rand_tick
+            if print_full_flag:
+                ctrl_equiclass += ' '.join(tick_list)
+            else:
+                ctrl_equiclass += '%s' % rand_tick
+            output.write('%s\n' % ctrl_equiclass)
+
 output.close()
- 
+
+# del program_bb
+# del equiclass_index_map
+# 
+# output_file = app_prefix + '_control_equivalence.txt' 
+# output = open(output_file, 'w')
+# output.write('pc:population:pilot:members\n')
+# pc_list = sorted(pc_equiclass_map.keys())
+# random.seed(seed_val)  # randomly select a tick to be the pilot
+# print_full_flag = False
+# for pc in pc_list:
+#     # if pc == '40138e':
+#     #     test = 0
+#     for equiv_id in xrange(1,len(pc_equiclass_map[pc])):
+#     # for equiv_id in pc_equiclass_map[pc]:
+#         ctrl_equiclass = '%s:' % pc
+#         tick_list = pc_equiclass_map[pc][equiv_id]
+#         ctrl_equiclass += '%d:' % len(tick_list)
+#         rand_tick_idx = random.randint(0,len(tick_list)-1)
+#         rand_tick = tick_list[rand_tick_idx]
+#         ctrl_equiclass += '%s:' % rand_tick
+#         if print_full_flag:
+#             ctrl_equiclass += ' '.join(tick_list)
+#         else:
+#             ctrl_equiclass += '%s' % rand_tick
+#         output.write('%s\n' % ctrl_equiclass)
+# output.close()
+# 

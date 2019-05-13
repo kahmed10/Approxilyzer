@@ -25,6 +25,7 @@ app_prefix = apps_dir + '/' + app_name
 
 inst_db_file = app_prefix + '_parsed.txt'
 
+
 inst_db_list = open(inst_db_file).read().splitlines()[1:]
 app_pcs = set(['0x' + i.split()[0] for i in inst_db_list])
 
@@ -32,25 +33,25 @@ app_pcs = set(['0x' + i.split()[0] for i in inst_db_list])
 
 in_file_base = approx_dir + '/workloads/' + isa + '/checkpoint/' + \
                app_name + '/' + app_name
-in_file_dump = in_file_base + '_dump.gz'
+#in_file_dump = in_file_base + '_dump.gz'
 
 start_recording = False
 stop_recording = False
 
 
-inst_num_list = []
-inst_num_pc_map = {}
-inst_num_map = {}
+#inst_num_list = []
+#inst_num_pc_map = {}
+#inst_num_map = {}
 
 apps_dir = approx_dir + '/workloads/' + isa + '/apps/' + app_name
 
-def get_out_string(curr_entry, curr_entry_mem, curr_entry_mem_addr):
+def get_out_string(curr_entry, curr_entry_mem, curr_entry_mem_addr, curr_entry_mem_size, curr_entry_mem_data):
     '''
     returns the entry in string format (tick, pc, (r/w, mem_addr)...)
     '''
     out_string = ' '.join(curr_entry)
     for i,mem in enumerate(curr_entry_mem):
-        out_string += ' ' + ' '.join([mem,curr_entry_mem_addr[i]]) 
+        out_string += ' ' + ' '.join([mem,curr_entry_mem_addr[i],curr_entry_mem_size[i],curr_entry_mem_data[i]]) 
     return out_string
 
 if isa == 'x86':
@@ -71,6 +72,8 @@ if isa == 'x86':
     curr_entry = []
     curr_entry_mem = []
     curr_entry_mem_addr = []
+    curr_entry_mem_size = []
+    curr_entry_mem_data = []
     mem_file_done = False
     outfile = open(out_filename,'w')
     mem_tick = 0
@@ -90,17 +93,19 @@ if isa == 'x86':
             if pc in app_pcs and pc != prev_pc and start_recording:
                 if stop_recording:
                     # print final entry
-                    out_string = get_out_string(curr_entry, curr_entry_mem, curr_entry_mem_addr)
+                    out_string = get_out_string(curr_entry, curr_entry_mem, curr_entry_mem_addr, curr_entry_mem_size, curr_entry_mem_data)
                     if out_string != '':
                         outfile.write('%s\n' % out_string)
                     break
-                out_string = get_out_string(curr_entry, curr_entry_mem, curr_entry_mem_addr)
+                out_string = get_out_string(curr_entry, curr_entry_mem, curr_entry_mem_addr, curr_entry_mem_size, curr_entry_mem_data)
                 if out_string != '':
                     outfile.write('%s\n' % out_string)
                 # clear previous entry and start new one
                 curr_entry = []
                 curr_entry_mem = []
                 curr_entry_mem_addr = [] 
+                curr_entry_mem_size = [] 
+                curr_entry_mem_data = [] 
                 curr_entry.append(str(tick))
                 curr_entry.append(pc)
             # TODO simplify conditional statements
@@ -112,8 +117,12 @@ if isa == 'x86':
                                 read_or_write = mem_entry[2]
                                 if 'Read' in read_or_write or 'Write' in read_or_write:
                                     address = mem_entry[10] # location in gem5 tracer
+                                    size = mem_entry[7] # location in gem5 tracer
+                                    data = mem_entry[12] # location in gem5 tracer
                                     curr_entry_mem.append(read_or_write)
                                     curr_entry_mem_addr.append(address)
+                                    curr_entry_mem_size.append(size)
+                                    curr_entry_mem_data.append(data)
                     mem_line = mem_io.readline()
                     if mem_line is None:
                         mem_file_done = True
